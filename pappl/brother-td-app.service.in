@@ -1,0 +1,37 @@
+[Unit]
+Description=Brother TD printer application
+Documentation=man:brother-td-app(1) man:brother-td(7)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lp
+Group=lp
+StateDirectory=brother-td-app
+WorkingDirectory=/var/lib/brother-td-app
+ExecStart=@BINDIR@/brother-td-app --no-tls --spool /var/lib/brother-td-app
+Restart=on-failure
+RestartSec=2
+
+# TLS is off by default because iOS prefers IPPS and PAPPL cannot always
+# create server credentials as user "lp".  Remove --no-tls to enable IPPS.
+#
+# The IPP port is selected automatically on first start and saved in
+# /var/lib/brother-td-app/port.  Use --port N to pin a specific port.
+#
+# To bind one specific printer, override ExecStart with:
+#   sudo systemctl edit brother-td-app
+#
+# [Service]
+# ExecStart=
+# ExecStart=@BINDIR@/brother-td-app --model TD-4210D \
+#     --device 'usb://Brother/TD-4210D?serial=...' \
+#     --printer TD4210 --no-tls --spool /var/lib/brother-td-app
+#
+# If your USB printer is not accessible as user "lp", run
+#   brother-td-app ... --check-device
+# and adjust the service user or the udev permissions.
+
+[Install]
+WantedBy=multi-user.target

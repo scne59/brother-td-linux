@@ -1,0 +1,9 @@
+Authors
+=======
+
+Jochen Schneider <j@lz44.de>
+  Original brother-td.pl utility and TD-4D raster protocol research.
+
+brother-td-linux contributors
+  CUPS filter, PPD generation, media geometry, dithering, compression,
+  PAPPL application, tests, and documentation.

@@ -1,0 +1,232 @@
+.\" SPDX-License-Identifier: MIT
+.\" Copyright (c) 2026 brother-td-cups contributors
+.TH brother-td 7 "2026-11-17" "brother-td-cups 1.0.0" "Driver Manual"
+.SH NAME
+brother-td \- CUPS driver for Brother TD-4D label printers
+.SH SYNOPSIS
+.B lpadmin
+.RB \-p " queue"
+.B \-E
+.BI \-v " device-uri"
+.BI \-m " brother-td-4410d.ppd"
+.SH DESCRIPTION
+.B brother-td-cups
+is a CUPS driver for Brother TD-4D series direct-thermal label printers.
+It consists of the
+.BR brother-td-filter (7)
+CUPS raster filter and a PPD for each supported model.
+.PP
+The driver converts CUPS raster pages to the printer's native raster command
+stream. It works with the standard CUPS
+.BR usb ,
+.BR socket ,
+and other backends; no proprietary backend is required.
+.SH SUPPORTED MODELS
+The following models have PPDs:
+.PP
+.nf
+TD-4210D   TD-4410D   TD-4420DN   TD-4510D   TD-4520DN   TD-4550DNWB
+TD-4215D   TD-4415D   TD-4425DN   TD-4455DNWB TD-4525DN  TD-4555DNWB
+TD-4425DNF TD-4555DNWBF TD-4420DNFC TD-4550DNWBFC
+.fi
+.PP
+203 dpi models have an 832-pin head; 300 dpi models have a 1280-pin head.
+.SH INSTALLATION
+Build and install the driver:
+.PP
+.nf
+make
+sudo make install
+.fi
+.PP
+Find the device URI:
+.PP
+.nf
+lpinfo -v | grep -i brother
+.fi
+.PP
+Create a queue:
+.PP
+.nf
+sudo lpadmin \-p TD4410 \-E \\
+    \-v 'usb://Brother/TD-4410D?serial=000G0G123456' \\
+    \-m brother-td-4410d.ppd
+sudo lpadmin \-d TD4410
+.fi
+.PP
+For a network model, use a raw socket URI such as
+.BR socket://192.168.1.50:9100 .
+.SH OPTIONS
+Options may be selected in the CUPS web interface or passed with
+.BR "lp \-o name=value" .
+.TP
+.B PageSize
+Physical label or page size. Common values are
+.BR 102x152mm ,
+.BR 102x102mm ,
+.BR 102x50mm ,
+.BR 76x26mm ,
+and
+.BR 51x26mm .
+Custom sizes are supported.
+.TP
+.B TDMediaType
+.B DieCut
+or
+.BR Continuous .
+The default is
+.BR DieCut .
+.TP
+.B Resolution
+.B 203dpi
+or
+.BR 300dpi ,
+fixed by the model PPD.
+.TP
+.B ColorModel
+Only
+.B Gray
+is available. It requests 8-bit grayscale CUPS raster so the driver
+controls halftoning.
+.TP
+.B TDModel
+Optional explicit model name. When omitted, the filter infers the 203/300 dpi
+head from the raster and uses the safe 661-byte invalidate sequence.
+.TP
+.B TDDither
+.BR Floyd ,
+.BR Jarvis ,
+.BR Stucki ,
+.BR Atkinson ,
+.BR Sierra ,
+.BR SierraLite ,
+.BR Burkes ,
+.BR Bayer4 ,
+.BR Bayer8 ,
+or
+.BR Threshold .
+The default is
+.BR Floyd .
+.TP
+.B TDThreshold
+Threshold value (64, 96, 128, 160, or 192). The default is 128.
+.TP
+.B TDScaling
+.BR Fit " (shrink only),"
+.BR FitEnlarge ,
+.BR Crop ,
+or
+.BR None .
+The default is
+.BR Fit .
+.TP
+.B TDRotate
+.BR 0 ,
+.BR 90 ,
+.BR 180 ,
+or
+.BR 270 .
+.TP
+.B TDInvert
+Invert black and white.
+.TP
+.B TDMirror
+Mirror the image horizontally.
+.TP
+.B TDBorder
+Print the non-imageable side margins black.
+.TP
+.B TDAlignX
+.BR Left ,
+.BR Center ,
+or
+.BR Right .
+.TP
+.B TDAlignY
+.BR Top ,
+.BR Center ,
+or
+.BR Bottom .
+.TP
+.B TDMargin
+Feed margin in millimetres for continuous media. The default is 3 mm.
+Ignored for die-cut labels.
+.TP
+.B TDAutoTrim
+Trim blank leading and trailing rows on continuous media. The default is
+.BR True .
+.TP
+.B TDAutoCut
+Enable the auto-cutter on continuous media. The default is
+.BR False .
+.TP
+.B TDCutAtEnd
+Cut at the end of the job. The default is
+.BR True .
+.TP
+.B TDPeeler
+Enable the peeler on continuous media. The default is
+.BR False .
+.TP
+.B TDCompression
+.B TIFF
+(PackBits) or
+.BR None .
+The default is
+.BR TIFF .
+.SH EXAMPLES
+Print a 4 x 6 inch die-cut label:
+.PP
+.nf
+lp \-d TD4410 \-o PageSize=102x152mm \-o TDMediaType=DieCut label.pdf
+.fi
+.PP
+Print on a continuous roll with a 10 mm feed margin:
+.PP
+.nf
+lp \-d TD4410 \-o PageSize=102x100mm \-o TDMediaType=Continuous \\
+   \-o TDAutoTrim=True \-o TDMargin=10 label.pdf
+.fi
+.PP
+Print three copies:
+.PP
+.nf
+lp \-d TD4410 \-n 3 label.pdf
+.fi
+.SH FILES
+.TP
+.I /usr/lib/cups/filter/brother-td-filter
+The CUPS raster filter (path from
+.BR cups-config\ \-\-serverbin ).
+.TP
+.I /usr/share/cups/model/brother-td-*.ppd
+The generated PPD files.
+.SH DIAGNOSTICS
+Enable CUPS debug logging with
+.BR "cupsctl \-\-debug\-logging" ,
+then inspect
+.IR /var/log/cups/error_log .
+Set
+.B BROTHER_TD_DEBUG=1
+in the CUPS environment for filter diagnostics, and
+.B BROTHER_TD_DEBUG_DIR
+to a directory writable by the filter user to capture the raw printer stream
+as
+.IR job-\fIid\fB.prn .
+.PP
+Run
+.B make check
+in the source tree to validate the filter, PPDs, and protocol encoding without
+a printer.
+.SH SEE ALSO
+.BR brother-td-filter (7),
+.BR brother-td-app (1),
+.BR cups (1),
+.BR lp (1),
+.BR lpadmin (8),
+.BR cupsd (8)
+.SH LICENSE
+MIT. The original
+.I brother-td.pl
+is Copyright \(co 2025 Jochen Schneider. See the LICENSE and NOTICE files in
+the source distribution.

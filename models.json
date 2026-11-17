@@ -1,0 +1,142 @@
+[
+  {
+    "id": "TD-4210D",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 350,
+    "max_width_mm": 104,
+    "usb_vid": "04f9",
+    "usb_pid": "20f2",
+    "generation": "TD-4D (2019)"
+  },
+  {
+    "id": "TD-4410D",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 350,
+    "max_width_mm": 104,
+    "usb_vid": "04f9",
+    "usb_pid": "20b6",
+    "generation": "TD-4D (2019)"
+  },
+  {
+    "id": "TD-4420DN",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 350,
+    "max_width_mm": 104,
+    "usb_vid": "04f9",
+    "usb_pid": "20b7",
+    "generation": "TD-4D (2019)"
+  },
+  {
+    "id": "TD-4510D",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 350,
+    "max_width_mm": 108,
+    "usb_vid": "04f9",
+    "usb_pid": "20b8",
+    "generation": "TD-4D (2019)"
+  },
+  {
+    "id": "TD-4520DN",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 350,
+    "max_width_mm": 108,
+    "usb_vid": "04f9",
+    "usb_pid": "20b9",
+    "generation": "TD-4D (2019)"
+  },
+  {
+    "id": "TD-4550DNWB",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 350,
+    "max_width_mm": 108,
+    "usb_vid": "04f9",
+    "usb_pid": "20ba",
+    "generation": "TD-4D (2019)"
+  },
+  {
+    "id": "TD-4215D",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 661,
+    "max_width_mm": 104,
+    "generation": "TD-4D (2024)"
+  },
+  {
+    "id": "TD-4415D",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 661,
+    "max_width_mm": 104,
+    "generation": "TD-4D (2024)"
+  },
+  {
+    "id": "TD-4425DN",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 661,
+    "max_width_mm": 104,
+    "generation": "TD-4D (2024)"
+  },
+  {
+    "id": "TD-4455DNWB",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 661,
+    "max_width_mm": 104,
+    "generation": "TD-4D (2024)"
+  },
+  {
+    "id": "TD-4525DN",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 661,
+    "max_width_mm": 108,
+    "generation": "TD-4D (2024)"
+  },
+  {
+    "id": "TD-4555DNWB",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 661,
+    "max_width_mm": 108,
+    "generation": "TD-4D (2024)"
+  },
+  {
+    "id": "TD-4425DNF",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 661,
+    "max_width_mm": 106,
+    "generation": "TD-4D linerless (2024)"
+  },
+  {
+    "id": "TD-4555DNWBF",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 661,
+    "max_width_mm": 108,
+    "generation": "TD-4D linerless (2024)"
+  },
+  {
+    "id": "TD-4420DNFC",
+    "dpi": 203,
+    "head_pins": 832,
+    "init_nuls": 350,
+    "max_width_mm": 106,
+    "generation": "TD-4D linerless (2019)"
+  },
+  {
+    "id": "TD-4550DNWBFC",
+    "dpi": 300,
+    "head_pins": 1280,
+    "init_nuls": 350,
+    "max_width_mm": 108,
+    "generation": "TD-4D linerless (2019)"
+  }
+]

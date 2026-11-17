@@ -1,0 +1,146 @@
+.\" SPDX-License-Identifier: MIT
+.\" Copyright (c) 2026 brother-td-cups contributors
+.TH brother-td-app 1 "2026-11-17" "brother-td-cups 1.0.0" "User Commands"
+.SH NAME
+brother-td-app \- PAPPL printer application for Brother TD-4D label printers
+.SH SYNOPSIS
+.B brother-td-app
+.RB [ \-\-device " uri" ]
+.RB [ \-\-model " model" ]
+.RB [ \-\-printer " name" ]
+.RB [ \-\-port " port" ]
+.RB [ \-\-spool " directory" ]
+.RB [ \-\-log " file" ]
+.SH DESCRIPTION
+.B brother-td-app
+is a PAPPL-based IPP Everywhere printer application for Brother TD-4D
+label printers.
+It exposes the printer without a PPD, so it can be used with CUPS 3,
+Android, iOS/iPadOS (AirPrint), and other IPP Everywhere clients.
+It advertises the
+.B _universal
+DNS-SD subtype used by AirPrint and is marked as Mopria-certified.
+.PP
+The application accepts PWG and Apple raster jobs directly and uses
+Ghostscript to convert PDF and PostScript jobs.
+.PP
+The common label sizes are advertised as separate virtual media sources
+because AirPrint builds its paper-size menu from the ready media of each
+source.  Selecting a virtual roll selects the page size; it does not require
+different hardware.
+.PP
+Android's built-in and Mopria print services ignore custom media names and
+only display a fixed list of standard PWG sizes.  The application therefore
+also advertises standard sizes such as
+.BR oe_photo-l_3.5x5in ,
+.BR om_card_54x86mm ,
+.BR om_dsc-photo_89x119mm ,
+and
+.BR jpn_hagaki_100x148mm .
+Custom sizes such as 4x5 and 4x3 remain available to AirPrint, CUPS, and
+other IPP clients.
+.PP
+The application also serves an ASCII printer-strings catalog.  This prevents
+CUPS/libppd from writing the UTF-8 double-prime used by its built-in inch
+localizations into a PPD declared as ISO-8859-1, which makes labels such as
+.B 4 x 6
+appear garbled in some print dialogs.
+.SH OPTIONS
+.TP
+.BI \-\-device " uri"
+Create one printer for the given PAPPL device URI, for example
+.B file:/tmp/capture
+or
+.BR socket://192.168.1.50:9100 .
+.TP
+.BI \-\-model " model"
+Model name for
+.BR \-\-device ,
+for example
+.BR TD-4410D .
+.TP
+.BI \-\-printer " name"
+Printer name for
+.BR \-\-device .
+The model name is used by default.
+.TP
+.BI \-\-port " port"
+IPP port.  The default is
+.BR auto :
+the application chooses a free port on first start, saves it in
+.IR SPOOL/port ,
+and reuses it on later starts.  Use
+.B 0
+or
+.B auto
+to request this explicitly, or a port number to pin the port.
+.TP
+.BI \-\-spool " directory"
+Spool directory. The default is
+.I /var/spool/brother-td-app
+when running as root, otherwise
+.I $XDG_STATE_HOME/brother-td-app
+or
+.IR ~/.local/state/brother-td-app .
+The directory is created automatically.
+.TP
+.BI \-\-log " file"
+Log file. The default is standard error.
+.TP
+.BI \-\-state " file"
+State file used to persist printers between runs. The default is
+.IR SPOOL/state .
+.TP
+.B \-\-no-state
+Do not load or save printer state. Use this if an old state file keeps
+recreating a stale printer configuration.
+.TP
+.B \-\-debug
+Enable PAPPL debug logging.
+.TP
+.B \-\-check-device
+Open the URI given with
+.B \-\-device
+and exit. This is useful for checking USB permissions and device URIs.
+.TP
+.B \-\-no-tls
+Do not advertise or require IPPS/TLS. Use this if an Android, iOS, or other
+driverless client discovers the printer but cannot connect to the
+application's self-signed certificate. The application then advertises only
+unencrypted IPP.  The packaged service enables this option by default; remove
+it from the service command to enable IPPS.
+.SH EXAMPLES
+Run a printer application with a local USB printer:
+.PP
+.nf
+brother-td-app --model TD-4410D \\
+    --device 'usb://Brother/TD-4410D?serial=...'
+.fi
+.PP
+Run a test instance that writes to a file:
+.PP
+.nf
+brother-td-app --model TD-4410D --device file:/tmp/td.out \\
+    --spool /tmp/td-spool
+.fi
+.PP
+Use
+.B \-\-port 8000
+if you want a fixed IPP port instead of the automatically selected one.
+.PP
+Then add it to CUPS as an IPP Everywhere printer.  The selected port is saved
+in
+.IR SPOOL/port :
+.PP
+.nf
+PORT=$(cat /tmp/td-spool/port)
+sudo lpadmin -p TD4410 -E \\
+    -v "ipp://localhost:$PORT/ipp/print/TD4410" -m everywhere
+lp -d TD4410 -o media=76x127mm label.pdf
+.fi
+.SH SEE ALSO
+.BR brother-td (7),
+.BR brother-td-filter (7),
+.BR pappl (7)
+.SH LICENSE
+MIT.

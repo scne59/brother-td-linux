@@ -1,0 +1,117 @@
+.\" SPDX-License-Identifier: MIT
+.\" Copyright (c) 2026 brother-td-cups contributors
+.TH brother-td-filter 7 "2026-11-17" "brother-td-cups 1.0.0" "Driver Manual"
+.SH NAME
+brother-td-filter \- CUPS raster filter for Brother TD-4D label printers
+.SH SYNOPSIS
+.B /usr/lib/cups/filter/brother-td-filter
+.I job-id user title copies options
+.RI [ file ]
+.SH DESCRIPTION
+.B brother-td-filter
+is a CUPS filter.
+It reads a CUPS raster stream
+.RB ( application/vnd.cups-raster )
+from standard input, converts each page to one-bit monochrome, and writes
+Brother TD-4D raster commands to standard output.
+The output is sent to the printer by the CUPS backend configured for the
+queue.
+.PP
+The filter is normally started by
+.BR cupsd (8)
+and should not be run by hand except for diagnostics.
+.SH OPTIONS
+All driver options are passed in the
+.I options
+argument by CUPS. They correspond to the PPD options described in
+.BR brother-td (7).
+The most important options are:
+.TP
+.B TDModel
+The printer model. It selects the head width and the invalidate sequence.
+.TP
+.B TDMediaType
+.B DieCut
+or
+.BR Continuous .
+.TP
+.B TDDither
+Monochrome conversion algorithm. The default is
+.BR Floyd .
+.TP
+.B TDThreshold
+Threshold value from 0 to 255. The default is 128.
+.TP
+.B TDScaling
+.BR Fit ,
+.BR FitEnlarge ,
+.BR Crop ,
+or
+.BR None .
+.TP
+.B TDRotate
+Rotation in degrees: 0, 90, 180, or 270.
+.TP
+.B TDInvert ", " TDMirror ", " TDBorder
+Boolean image options.
+.TP
+.B TDAlignX ", " TDAlignY
+Placement of the image inside the printable area.
+.TP
+.B TDMargin
+Feed margin for continuous media in millimetres.
+.TP
+.B TDAutoTrim
+Trim blank rows on continuous media.
+.TP
+.B TDAutoCut ", " TDCutAtEnd ", " TDPeeler
+Finishing options for continuous media.
+.TP
+.B TDCompression
+.B TIFF
+(PackBits) or
+.BR None .
+.SH ENVIRONMENT
+.TP
+.B BROTHER_TD_DEBUG
+If set to a non-empty value other than
+.B 0
+or
+.BR false ,
+the filter logs detailed geometry and option information to standard error,
+which CUPS writes to its error log.
+.TP
+.B BROTHER_TD_DEBUG_DIR
+If set to a writable directory, the filter writes the exact byte stream sent
+to the printer to
+.IR job-\fIid\fB.prn .
+The CUPS filter user (usually
+.BR lp )
+must be able to create files in the directory.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+The input was invalid, an option was unsupported, memory was exhausted, or a
+write error occurred.
+.SH NOTES
+The filter emits
+.B Z
+for blank raster rows, uses TIFF/PackBits when beneficial, and sends
+.B FF
+between pages and
+.B Ctrl-Z
+after the last page. It finishes with
+.B "ESC i a ff"
+to return the printer to its default command mode.
+.PP
+Die-cut labels use a zero feed margin. Continuous media uses the configured
+feed margin and can be trimmed automatically.
+.SH SEE ALSO
+.BR brother-td (7),
+.BR cups (1),
+.BR cupsd (8)
+.SH LICENSE
+MIT.

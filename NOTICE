@@ -1,0 +1,19 @@
+brother-td-linux
+================
+
+This project is a derivative work based on:
+
+  brother-td
+  A command line script to print images to Brother TD label printers.
+  https://github.com/scne59/brother-td
+  Copyright (c) 2025 Jochen Schneider
+  Licensed under the MIT License.
+
+The original Perl utility provided the initial USB discovery, image
+conversion, and Brother TD raster command sequence.  The CUPS filter, PPD
+generation, media geometry, dithering, compression, PAPPL application, and
+test suite in this repository are new work by the brother-td-linux
+contributors.
+
+Brother and TD are trademarks of Brother Industries, Ltd.  This project is
+not affiliated with, endorsed by, or sponsored by Brother Industries, Ltd.

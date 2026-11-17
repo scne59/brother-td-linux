@@ -1,0 +1,320 @@
+*PPD-Adobe: "4.3"
+*FormatVersion: "4.3"
+*FileVersion: "1.0.0"
+*LanguageVersion: English
+*LanguageEncoding: ISOLatin1
+*PCFileName: "TD4550DNWB.PPD"
+*Manufacturer: "Brother"
+*Product: "(TD-4550DNWB)"
+*ModelName: "Brother TD-4550DNWB"
+*ShortNickName: "Brother TD-4550DNWB"
+*NickName: "Brother TD-4550DNWB label printer, 300 dpi"
+*PSVersion: "(3010.000) 0"
+*LanguageLevel: "3"
+*ColorDevice: False
+*DefaultColorSpace: Gray
+*cupsBitsPerColor: 8
+*FileSystem: False
+*Throughput: "6"
+*LandscapeOrientation: Plus90
+*1284DeviceID: "MFG:Brother;MDL:TD-4550DNWB;"
+*cupsVersion: 2.2
+*cupsManualCopies: True
+*cupsFilter: "application/vnd.cups-raster 0 brother-td-filter"
+
+*%
+*% The filter receives a CUPS raster page and emits Brother TD
+*% raster commands.  It owns all margins/scaling decisions, so the
+*% page is described as fully imageable here.
+*%
+*HWMargins: 0 0 0 0
+*MaxMediaWidth: "306"
+*MaxMediaHeight: "8504"
+*CenterRegistered: False
+*NonUIOrderDependency: 10.0 AnySetup *CustomPageSize
+*CustomPageSize True: ""
+*ParamCustomPageSize Width: 1 points 54 306
+*ParamCustomPageSize Height: 2 points 34 8504
+*ParamCustomPageSize WidthOffset: 3 points 0 0
+*ParamCustomPageSize HeightOffset: 4 points 0 0
+*ParamCustomPageSize Orientation: 5 int 0 3
+
+*OpenGroup: General/General
+*OpenUI *PageSize/Media Size: PickOne
+*OrderDependency: 10.0 AnySetup *PageSize
+*DefaultPageSize: 102x152mm
+*PageSize 102x152mm/102 x 152 mm (4 x 6 in): "<</PageSize[289 431]>>setpagedevice"
+*PageSize 102x102mm/102 x 102 mm (4 x 4 in): "<</PageSize[289 289]>>setpagedevice"
+*PageSize 102x100mm/102 x 100 mm: "<</PageSize[289 283]>>setpagedevice"
+*PageSize 102x76mm/102 x 76 mm (4 x 3 in): "<</PageSize[289 215]>>setpagedevice"
+*PageSize 102x50mm/102 x 50 mm (4 x 2 in): "<</PageSize[289 142]>>setpagedevice"
+*PageSize 102x38mm/102 x 38 mm (4 x 1.5 in): "<</PageSize[289 108]>>setpagedevice"
+*PageSize 102x25mm/102 x 25 mm (4 x 1 in): "<</PageSize[289 71]>>setpagedevice"
+*PageSize 102x127mm/102 x 127 mm (4 x 5 in): "<</PageSize[289 360]>>setpagedevice"
+*PageSize 102x114mm/102 x 114 mm (4 x 4.5 in): "<</PageSize[289 323]>>setpagedevice"
+*PageSize 106x152mm/106 x 152 mm: "<</PageSize[300 431]>>setpagedevice"
+*PageSize 106x100mm/106 x 100 mm: "<</PageSize[300 283]>>setpagedevice"
+*PageSize 90x100mm/90 x 100 mm: "<</PageSize[255 283]>>setpagedevice"
+*PageSize 80x100mm/80 x 100 mm: "<</PageSize[227 283]>>setpagedevice"
+*PageSize 76x127mm/76 x 127 mm (3 x 5 in): "<</PageSize[215 360]>>setpagedevice"
+*PageSize 76x100mm/76 x 100 mm: "<</PageSize[215 283]>>setpagedevice"
+*PageSize 76x76mm/76 x 76 mm (3 x 3 in): "<</PageSize[215 215]>>setpagedevice"
+*PageSize 76x64mm/76 x 64 mm (3 x 2.5 in): "<</PageSize[215 181]>>setpagedevice"
+*PageSize 76x51mm/76 x 51 mm (3 x 2 in): "<</PageSize[215 145]>>setpagedevice"
+*PageSize 76x38mm/76 x 38 mm (3 x 1.5 in): "<</PageSize[215 108]>>setpagedevice"
+*PageSize 76x26mm/76 x 26 mm (3 x 1 in): "<</PageSize[215 74]>>setpagedevice"
+*PageSize 58x100mm/58 x 100 mm: "<</PageSize[164 283]>>setpagedevice"
+*PageSize 51x76mm/51 x 76 mm (2 x 3 in): "<</PageSize[145 215]>>setpagedevice"
+*PageSize 51x51mm/51 x 51 mm (2 x 2 in): "<</PageSize[145 145]>>setpagedevice"
+*PageSize 51x38mm/51 x 38 mm (2 x 1.5 in): "<</PageSize[145 108]>>setpagedevice"
+*PageSize 51x26mm/51 x 26 mm (2 x 1 in): "<</PageSize[145 74]>>setpagedevice"
+*PageSize 39x100mm/39 x 100 mm: "<</PageSize[111 283]>>setpagedevice"
+*CloseUI: *PageSize
+*DefaultPaperDimension: 102x152mm
+*DefaultImageableArea: 102x152mm
+*PaperDimension 102x152mm: "289 431"
+*ImageableArea 102x152mm: "0 0 289 431"
+*PaperDimension 102x102mm: "289 289"
+*ImageableArea 102x102mm: "0 0 289 289"
+*PaperDimension 102x100mm: "289 283"
+*ImageableArea 102x100mm: "0 0 289 283"
+*PaperDimension 102x76mm: "289 215"
+*ImageableArea 102x76mm: "0 0 289 215"
+*PaperDimension 102x50mm: "289 142"
+*ImageableArea 102x50mm: "0 0 289 142"
+*PaperDimension 102x38mm: "289 108"
+*ImageableArea 102x38mm: "0 0 289 108"
+*PaperDimension 102x25mm: "289 71"
+*ImageableArea 102x25mm: "0 0 289 71"
+*PaperDimension 102x127mm: "289 360"
+*ImageableArea 102x127mm: "0 0 289 360"
+*PaperDimension 102x114mm: "289 323"
+*ImageableArea 102x114mm: "0 0 289 323"
+*PaperDimension 106x152mm: "300 431"
+*ImageableArea 106x152mm: "0 0 300 431"
+*PaperDimension 106x100mm: "300 283"
+*ImageableArea 106x100mm: "0 0 300 283"
+*PaperDimension 90x100mm: "255 283"
+*ImageableArea 90x100mm: "0 0 255 283"
+*PaperDimension 80x100mm: "227 283"
+*ImageableArea 80x100mm: "0 0 227 283"
+*PaperDimension 76x127mm: "215 360"
+*ImageableArea 76x127mm: "0 0 215 360"
+*PaperDimension 76x100mm: "215 283"
+*ImageableArea 76x100mm: "0 0 215 283"
+*PaperDimension 76x76mm: "215 215"
+*ImageableArea 76x76mm: "0 0 215 215"
+*PaperDimension 76x64mm: "215 181"
+*ImageableArea 76x64mm: "0 0 215 181"
+*PaperDimension 76x51mm: "215 145"
+*ImageableArea 76x51mm: "0 0 215 145"
+*PaperDimension 76x38mm: "215 108"
+*ImageableArea 76x38mm: "0 0 215 108"
+*PaperDimension 76x26mm: "215 74"
+*ImageableArea 76x26mm: "0 0 215 74"
+*PaperDimension 58x100mm: "164 283"
+*ImageableArea 58x100mm: "0 0 164 283"
+*PaperDimension 51x76mm: "145 215"
+*ImageableArea 51x76mm: "0 0 145 215"
+*PaperDimension 51x51mm: "145 145"
+*ImageableArea 51x51mm: "0 0 145 145"
+*PaperDimension 51x38mm: "145 108"
+*ImageableArea 51x38mm: "0 0 145 108"
+*PaperDimension 51x26mm: "145 74"
+*ImageableArea 51x26mm: "0 0 145 74"
+*PaperDimension 39x100mm: "111 283"
+*ImageableArea 39x100mm: "0 0 111 283"
+
+*OpenUI *PageRegion/Page Region: PickOne
+*OrderDependency: 10.0 AnySetup *PageRegion
+*DefaultPageRegion: 102x152mm
+*PageRegion 102x152mm/102 x 152 mm (4 x 6 in): "<</PageSize[289 431]>>setpagedevice"
+*PageRegion 102x102mm/102 x 102 mm (4 x 4 in): "<</PageSize[289 289]>>setpagedevice"
+*PageRegion 102x100mm/102 x 100 mm: "<</PageSize[289 283]>>setpagedevice"
+*PageRegion 102x76mm/102 x 76 mm (4 x 3 in): "<</PageSize[289 215]>>setpagedevice"
+*PageRegion 102x50mm/102 x 50 mm (4 x 2 in): "<</PageSize[289 142]>>setpagedevice"
+*PageRegion 102x38mm/102 x 38 mm (4 x 1.5 in): "<</PageSize[289 108]>>setpagedevice"
+*PageRegion 102x25mm/102 x 25 mm (4 x 1 in): "<</PageSize[289 71]>>setpagedevice"
+*PageRegion 102x127mm/102 x 127 mm (4 x 5 in): "<</PageSize[289 360]>>setpagedevice"
+*PageRegion 102x114mm/102 x 114 mm (4 x 4.5 in): "<</PageSize[289 323]>>setpagedevice"
+*PageRegion 106x152mm/106 x 152 mm: "<</PageSize[300 431]>>setpagedevice"
+*PageRegion 106x100mm/106 x 100 mm: "<</PageSize[300 283]>>setpagedevice"
+*PageRegion 90x100mm/90 x 100 mm: "<</PageSize[255 283]>>setpagedevice"
+*PageRegion 80x100mm/80 x 100 mm: "<</PageSize[227 283]>>setpagedevice"
+*PageRegion 76x127mm/76 x 127 mm (3 x 5 in): "<</PageSize[215 360]>>setpagedevice"
+*PageRegion 76x100mm/76 x 100 mm: "<</PageSize[215 283]>>setpagedevice"
+*PageRegion 76x76mm/76 x 76 mm (3 x 3 in): "<</PageSize[215 215]>>setpagedevice"
+*PageRegion 76x64mm/76 x 64 mm (3 x 2.5 in): "<</PageSize[215 181]>>setpagedevice"
+*PageRegion 76x51mm/76 x 51 mm (3 x 2 in): "<</PageSize[215 145]>>setpagedevice"
+*PageRegion 76x38mm/76 x 38 mm (3 x 1.5 in): "<</PageSize[215 108]>>setpagedevice"
+*PageRegion 76x26mm/76 x 26 mm (3 x 1 in): "<</PageSize[215 74]>>setpagedevice"
+*PageRegion 58x100mm/58 x 100 mm: "<</PageSize[164 283]>>setpagedevice"
+*PageRegion 51x76mm/51 x 76 mm (2 x 3 in): "<</PageSize[145 215]>>setpagedevice"
+*PageRegion 51x51mm/51 x 51 mm (2 x 2 in): "<</PageSize[145 145]>>setpagedevice"
+*PageRegion 51x38mm/51 x 38 mm (2 x 1.5 in): "<</PageSize[145 108]>>setpagedevice"
+*PageRegion 51x26mm/51 x 26 mm (2 x 1 in): "<</PageSize[145 74]>>setpagedevice"
+*PageRegion 39x100mm/39 x 100 mm: "<</PageSize[111 283]>>setpagedevice"
+*CloseUI: *PageRegion
+
+*OpenUI *ColorModel/Color Model: PickOne
+*OrderDependency: 20.0 AnySetup *ColorModel
+*DefaultColorModel: Gray
+*ColorModel Gray/Grayscale: "<</cupsColorSpace 3/cupsBitsPerColor 8/cupsColorOrder 0>>setpagedevice"
+*CloseUI: *ColorModel
+
+*OpenUI *Resolution/Output Resolution: PickOne
+*OrderDependency: 20.0 AnySetup *Resolution
+*DefaultResolution: 300dpi
+*Resolution 300dpi/300 dpi: "<</HWResolution[300 300]>>setpagedevice"
+*CloseUI: *Resolution
+*CloseGroup: General
+
+*OpenGroup: Media/Media
+*OpenUI *TDModel/Printer Model: PickOne
+*OrderDependency: 20.0 AnySetup *TDModel
+*DefaultTDModel: TD-4550DNWB
+*TDModel TD-4550DNWB/TD-4550DNWB: ""
+*CloseUI: *TDModel
+
+*OpenUI *TDMediaType/Media Type: PickOne
+*OrderDependency: 20.0 AnySetup *TDMediaType
+*DefaultTDMediaType: DieCut
+*TDMediaType DieCut/Die-cut labels: ""
+*TDMediaType Continuous/Continuous roll: ""
+*CloseUI: *TDMediaType
+*CloseGroup: Media
+
+*OpenGroup: ImageQuality/Image Quality
+*OpenUI *TDDither/Dithering: PickOne
+*OrderDependency: 30.0 AnySetup *TDDither
+*DefaultTDDither: Floyd
+*TDDither Floyd/Floyd-Steinberg (recommended): ""
+*TDDither Jarvis/Jarvis-Judice-Ninke: ""
+*TDDither Stucki/Stucki: ""
+*TDDither Atkinson/Atkinson: ""
+*TDDither Sierra/Sierra: ""
+*TDDither SierraLite/Sierra Lite: ""
+*TDDither Burkes/Burkes: ""
+*TDDither Bayer4/Ordered 4 x 4: ""
+*TDDither Bayer8/Ordered 8 x 8: ""
+*TDDither Threshold/Threshold (no dithering): ""
+*CloseUI: *TDDither
+
+*OpenUI *TDThreshold/Threshold: PickOne
+*OrderDependency: 30.0 AnySetup *TDThreshold
+*DefaultTDThreshold: 128
+*TDThreshold 64/25%: ""
+*TDThreshold 96/37.5%: ""
+*TDThreshold 128/50% (default): ""
+*TDThreshold 160/62.5%: ""
+*TDThreshold 192/75%: ""
+*CloseUI: *TDThreshold
+
+*OpenUI *TDScaling/Scaling: PickOne
+*OrderDependency: 30.0 AnySetup *TDScaling
+*DefaultTDScaling: Fit
+*TDScaling Fit/Fit (shrink only): ""
+*TDScaling FitEnlarge/Fit (allow enlargement): ""
+*TDScaling Crop/Fill and crop: ""
+*TDScaling None/Actual size (crop if needed): ""
+*CloseUI: *TDScaling
+
+*OpenUI *TDRotate/Rotation: PickOne
+*OrderDependency: 30.0 AnySetup *TDRotate
+*DefaultTDRotate: 0
+*TDRotate 0/0 degrees: ""
+*TDRotate 90/90 degrees clockwise: ""
+*TDRotate 180/180 degrees: ""
+*TDRotate 270/90 degrees counter-clockwise: ""
+*CloseUI: *TDRotate
+
+*OpenUI *TDInvert/Invert Image: Boolean
+*OrderDependency: 30.0 AnySetup *TDInvert
+*DefaultTDInvert: False
+*TDInvert False/No: ""
+*TDInvert True/Yes: ""
+*CloseUI: *TDInvert
+
+*OpenUI *TDMirror/Mirror Image: Boolean
+*OrderDependency: 30.0 AnySetup *TDMirror
+*DefaultTDMirror: False
+*TDMirror False/No: ""
+*TDMirror True/Yes: ""
+*CloseUI: *TDMirror
+
+*OpenUI *TDBorder/Black Side Margins: Boolean
+*OrderDependency: 30.0 AnySetup *TDBorder
+*DefaultTDBorder: False
+*TDBorder False/No: ""
+*TDBorder True/Yes: ""
+*CloseUI: *TDBorder
+*CloseGroup: ImageQuality
+
+*OpenGroup: Finishing/Finishing
+*OpenUI *TDAlignX/Horizontal Alignment: PickOne
+*OrderDependency: 40.0 AnySetup *TDAlignX
+*DefaultTDAlignX: Center
+*TDAlignX Left/Left: ""
+*TDAlignX Center/Center: ""
+*TDAlignX Right/Right: ""
+*CloseUI: *TDAlignX
+
+*OpenUI *TDAlignY/Vertical Alignment: PickOne
+*OrderDependency: 40.0 AnySetup *TDAlignY
+*DefaultTDAlignY: Center
+*TDAlignY Top/Top: ""
+*TDAlignY Center/Center: ""
+*TDAlignY Bottom/Bottom: ""
+*CloseUI: *TDAlignY
+
+*OpenUI *TDMargin/Feed Margin: PickOne
+*OrderDependency: 40.0 AnySetup *TDMargin
+*DefaultTDMargin: 3
+*TDMargin 3/3 mm (minimum): ""
+*TDMargin 5/5 mm: ""
+*TDMargin 10/10 mm: ""
+*TDMargin 15/15 mm: ""
+*TDMargin 20/20 mm: ""
+*TDMargin 30/30 mm: ""
+*CloseUI: *TDMargin
+
+*OpenUI *TDAutoTrim/Auto-trim Continuous Media: Boolean
+*OrderDependency: 40.0 AnySetup *TDAutoTrim
+*DefaultTDAutoTrim: True
+*TDAutoTrim False/No: ""
+*TDAutoTrim True/Yes: ""
+*CloseUI: *TDAutoTrim
+
+*OpenUI *TDAutoCut/Auto Cut: Boolean
+*OrderDependency: 40.0 AnySetup *TDAutoCut
+*DefaultTDAutoCut: False
+*TDAutoCut False/No: ""
+*TDAutoCut True/Yes: ""
+*CloseUI: *TDAutoCut
+
+*OpenUI *TDCutAtEnd/Cut at End: Boolean
+*OrderDependency: 40.0 AnySetup *TDCutAtEnd
+*DefaultTDCutAtEnd: True
+*TDCutAtEnd False/No: ""
+*TDCutAtEnd True/Yes: ""
+*CloseUI: *TDCutAtEnd
+
+*OpenUI *TDPeeler/Peeler: Boolean
+*OrderDependency: 40.0 AnySetup *TDPeeler
+*DefaultTDPeeler: False
+*TDPeeler False/No: ""
+*TDPeeler True/Yes: ""
+*CloseUI: *TDPeeler
+
+*OpenUI *TDCompression/Raster Compression: PickOne
+*OrderDependency: 40.0 AnySetup *TDCompression
+*DefaultTDCompression: TIFF
+*TDCompression None/None: ""
+*TDCompression TIFF/TIFF PackBits: ""
+*CloseUI: *TDCompression
+*CloseGroup: Finishing
+
+*cupsUIConstraints: "*TDMediaType DieCut *TDAutoCut True"
+*cupsUIConstraints: "*TDMediaType DieCut *TDPeeler True"
+
+*% End of PPD

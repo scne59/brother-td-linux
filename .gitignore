@@ -1,0 +1,22 @@
+# Build products
+/build/
+/brother-td-linux-*.tar.gz
+/stage/
+
+# Editor and OS noise
+*.o
+*.a
+*.so
+*~
+.DS_Store
+compile_commands.json
+__pycache__/
+*.pyc
+
+# Debian packaging products
+/debian/.debhelper/
+/debian/tmp/
+/debian/files
+/debian/debhelper-build-stamp
+/debian/*.substvars
+/debian/printer-driver-brother-td/

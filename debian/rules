@@ -1,0 +1,37 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: MIT
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) all pappl PREFIX=/usr
+
+override_dh_auto_test:
+	$(MAKE) check
+
+override_dh_auto_install:
+	$(MAKE) install \
+		DESTDIR=$(CURDIR)/debian/printer-driver-brother-td \
+		PREFIX=/usr \
+		DOCDIR=/usr/share/doc/printer-driver-brother-td
+	rm -f $(CURDIR)/debian/printer-driver-brother-td/usr/bin/brother-td-app
+	rm -f $(CURDIR)/debian/printer-driver-brother-td/usr/share/man/man1/brother-td-app.1
+	rm -f $(CURDIR)/debian/printer-driver-brother-td/usr/lib/systemd/system/brother-td-app.service
+	rm -f $(CURDIR)/debian/printer-driver-brother-td/usr/share/brother-td-app/style.css
+	rmdir $(CURDIR)/debian/printer-driver-brother-td/usr/bin 2>/dev/null || true
+	rmdir $(CURDIR)/debian/printer-driver-brother-td/usr/share/man/man1 2>/dev/null || true
+	rmdir $(CURDIR)/debian/printer-driver-brother-td/usr/lib/systemd/system 2>/dev/null || true
+	rmdir $(CURDIR)/debian/printer-driver-brother-td/usr/lib/systemd 2>/dev/null || true
+	rmdir $(CURDIR)/debian/printer-driver-brother-td/usr/share/brother-td-app 2>/dev/null || true
+	install -D -m 0755 build/brother-td-app \
+		$(CURDIR)/debian/brother-td-printer-app/usr/bin/brother-td-app
+	install -D -m 0644 man/brother-td-app.1 \
+		$(CURDIR)/debian/brother-td-printer-app/usr/share/man/man1/brother-td-app.1
+	install -D -m 0644 build/brother-td-app.service \
+		$(CURDIR)/debian/brother-td-printer-app/usr/lib/systemd/system/brother-td-app.service
+	install -D -m 0644 pappl/brother-td.css \
+		$(CURDIR)/debian/brother-td-printer-app/usr/share/brother-td-app/style.css
+
+override_dh_auto_clean:
+	$(MAKE) clean

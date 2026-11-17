@@ -1,0 +1,53 @@
+Source: brother-td-cups
+Section: text
+Priority: optional
+Maintainer: brother-td-linux contributors <brother-td-linux@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cups-ppdc,
+ cups-filters,
+ cups-ipp-utils,
+ ghostscript,
+ libcups2-dev,
+ libpappl-dev,
+ pkg-config,
+ python3,
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/scne59/brother-td-linux
+
+Package: printer-driver-brother-td
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ cups-filters,
+ ghostscript,
+Recommends:
+ cups,
+Description: CUPS driver for Brother TD-4D label printers
+ A native CUPS raster filter and PPDs for Brother TD-4D series direct
+ thermal label printers.
+ .
+ It supports die-cut labels and continuous rolls, 203 dpi and 300 dpi
+ models, several dithering algorithms, scaling/rotation, copies, and
+ optional auto-cut/peeler control.  The driver speaks the printer's native
+ raster command language and works with the standard CUPS USB and network
+ backends.
+
+Package: brother-td-printer-app
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ ghostscript,
+Recommends:
+ cups,
+Description: PAPPL/IPP Everywhere printer application for Brother TD-4D
+ A native PAPPL printer application for Brother TD-4D series direct
+ thermal label printers.
+ .
+ Unlike the PPD driver, this application exposes the printer as an IPP
+ Everywhere/AirPrint printer and can be used with CUPS 3 and other
+ driverless clients.  It accepts PWG/Apple raster directly and uses
+ Ghostscript for PDF and PostScript jobs.

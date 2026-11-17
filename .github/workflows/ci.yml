@@ -1,0 +1,75 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libcups2-dev cups-ppdc cups-filters ghostscript \
+            python3
+
+      - name: Build
+        run: make -j"$(nproc)"
+
+      - name: Test
+        env:
+          LC_ALL: C
+        run: make check
+
+      - name: Install into a staging directory
+        run: |
+          make install DESTDIR="$PWD/stage" PREFIX=/usr
+          test -x stage/usr/lib/cups/filter/brother-td-filter
+          test -f stage/usr/share/cups/model/brother-td-4410d.ppd
+          test -f stage/usr/share/man/man7/brother-td.7
+
+      - name: Build source tarball
+        run: make dist
+
+  debian-package:
+    name: Debian package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debhelper libcups2-dev libpappl-dev \
+            cups-ppdc cups-ipp-utils cups-filters ghostscript pkg-config python3
+      - name: Build package
+        run: dpkg-buildpackage -b -us -uc -d
+      - name: Inspect package
+        run: dpkg-deb -c ../printer-driver-brother-td_*.deb | grep brother-td-filter
+
+  pappl:
+    name: PAPPL printer application
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libcups2-dev \
+            libpappl-dev cups-ppdc cups-ipp-utils cups-filters ghostscript python3
+      - name: Build and test
+        env:
+          LC_ALL: C
+        run: |
+          make -j"$(nproc)" all-pappl
+          make check
