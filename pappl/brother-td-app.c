@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -443,6 +444,59 @@ static void fill_media(const td_model_t *model, pappl_media_col_t *media,
     media->bottom_margin = 300;
     media->top_margin = 300;
     media->tracking = PAPPL_MEDIA_TRACKING_MARK;
+}
+
+static bool avahi_available(void)
+{
+    static const char * const paths[] = {
+        "/run/avahi-daemon/socket",
+        "/var/run/avahi-daemon/socket",
+        NULL
+    };
+    int i;
+
+    for (i = 0; paths[i] != NULL; i++) {
+        struct sockaddr_un addr;
+        int fd;
+
+        if (strlen(paths[i]) >= sizeof(addr.sun_path))
+            continue;
+        if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+            continue;
+
+        memset(&addr, 0, sizeof(addr));
+        addr.sun_family = AF_UNIX;
+        papplCopyString(addr.sun_path, paths[i], sizeof(addr.sun_path));
+
+        if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
+            close(fd);
+            return true;
+        }
+        close(fd);
+    }
+
+    return false;
+}
+
+static bool add_printer_fallback_cb(pappl_client_t *client, void *data)
+{
+    (void)data;
+
+    if (!papplClientRespond(client, HTTP_STATUS_OK, NULL, "text/html", 0, 0))
+        return false;
+
+    papplClientHTMLHeader(client, "Add Printer", 0);
+    papplClientHTMLPuts(client,
+        "<div class=\"content\">\n"
+        "<h1 class=\"title\">Add Printer</h1>\n"
+        "<div class=\"banner\"><b>Automatic printer discovery is unavailable.</b> "
+        "The <code>avahi-daemon</code> service is not running.</div>\n"
+        "<p>Start <code>avahi-daemon</code> and restart "
+        "<code>brother-td-app</code>, or start the application with "
+        "<code>--device</code> and <code>--printer</code>.</p>\n"
+        "</div>\n");
+    papplClientHTMLFooter(client);
+    return true;
 }
 
 static bool td_status(pappl_printer_t *printer)
@@ -1366,6 +1420,13 @@ int main(int argc, char **argv)
     papplSystemAddLink(system, "Add Printer", "/addprinter", PAPPL_LOPTIONS_NAVIGATION);
     papplSystemAddLink(system, "Printers", "/", PAPPL_LOPTIONS_NAVIGATION);
 
+    if (!avahi_available()) {
+        papplLog(system, PAPPL_LOGLEVEL_WARN,
+                 "avahi-daemon is not running; automatic printer discovery on the Add Printer page is disabled");
+        papplSystemAddResourceCallback(system, "/addprinter", "text/html",
+                                       add_printer_fallback_cb, system);
+    }
+
     papplSystemSetFooterHTML(system,
         "brother-td-linux &middot; <a href=\"https://github.com/scne59/brother-td-linux\">project page</a>");
 
@@ -1468,10 +1529,15 @@ int main(int argc, char **argv)
             }
         }
     } else if (!state_loaded) {
+#if HAVE_PAPPL_CREATE_PRINTERS
         papplSystemCreatePrinters(system,
                                   PAPPL_DEVTYPE_USB | PAPPL_DEVTYPE_SOCKET |
                                   PAPPL_DEVTYPE_DNS_SD,
                                   NULL, NULL);
+#else
+        papplLog(system, PAPPL_LOGLEVEL_WARN,
+                 "This PAPPL version cannot auto-discover printers; use --device or add one through the web interface.");
+#endif
     }
 
     fprintf(stderr,

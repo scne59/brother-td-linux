@@ -101,5 +101,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Serve an ASCII `printer-strings-uri` catalog so CUPS/libppd writes
   `4 x 6 in` instead of the UTF-8 `4 x 6″` in a PPD declared as ISO-8859-1,
   which made inch sizes appear garbled in some CUPS dialogs.
+- Build with PAPPL 1.3.x as shipped on Ubuntu 24.04. Automatic first-run
+  discovery still requires PAPPL 1.4 or newer; older versions use `--device`
+  or the web interface.
+- Keep the Add Printer page available when `avahi-daemon` is not running
+  instead of aborting in PAPPL 1.3's DNS-SD browser. The page shows a
+  diagnostic and instructions to start Avahi or use `--device`.
 
 [1.0.0]: https://github.com/scne59/brother-td-linux/releases/tag/v1.0.0

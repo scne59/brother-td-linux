@@ -115,7 +115,8 @@ Build:
 - C11 compiler, `make`, `pkg-config`
 - `libcups2-dev` (or the equivalent development package)
 - Python 3 only if you want to regenerate PPDs from `models.json`
-- `libpappl-dev` only for the optional PAPPL printer application
+- `libpappl-dev` only for the optional PAPPL printer application (1.3 or
+  newer; automatic first-run printer discovery requires PAPPL 1.4)
 
 Tests additionally use:
 
@@ -241,6 +242,11 @@ sudo apt install libpappl-dev cups-ipp-utils
 make pappl
 sudo make install-pappl PREFIX=/usr
 ```
+
+Ubuntu 24.04 ships PAPPL 1.3.1. The app builds and prints with `--device` on
+that version, but automatic first-run printer discovery requires PAPPL 1.4 or
+newer. On PAPPL 1.3, add a printer through the web interface (with
+`avahi-daemon` running) or pass `--device` and `--printer`.
 
 Run one printer connected to a device URI. As root the default spool is
 `/var/spool/brother-td-app`; as a normal user it defaults to

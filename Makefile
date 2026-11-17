@@ -14,6 +14,9 @@ CUPS_SERVERBIN ?= $(shell cups-config --serverbin 2>/dev/null || echo /usr/lib/c
 CUPS_DATADIR   ?= $(shell cups-config --datadir 2>/dev/null || echo /usr/share/cups)
 PAPPL_CFLAGS   ?= $(shell $(PKG_CONFIG) --cflags pappl 2>/dev/null)
 PAPPL_LIBS     ?= $(shell $(PKG_CONFIG) --libs pappl 2>/dev/null)
+ifeq ($(shell $(PKG_CONFIG) --atleast-version=1.4.0 pappl 2>/dev/null && echo yes),yes)
+CPPFLAGS       += -DHAVE_PAPPL_CREATE_PRINTERS=1
+endif
 MANDIR         ?= $(PREFIX)/share/man
 SYSTEMD_UNIT_DIR ?= $(PREFIX)/lib/systemd/system
 APPDATA_DIR    ?= $(PREFIX)/share/brother-td-app
