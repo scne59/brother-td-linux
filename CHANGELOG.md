@@ -114,5 +114,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Make `make check` fail if the PAPPL integration test fails, and wait for
   the startup banner instead of racing it. The full test suite now passes on
   Raspberry Pi 4 / Raspbian 12 armhf with PAPPL 1.3.1.
+- Build against PAPPL 1.0.3 as shipped on Ubuntu 22.04 by using compatibility
+  wrappers for the older API names. PAPPL 1.0.x ignores `--no-tls` and still
+  advertises IPPS, so newer PAPPL is recommended for iOS/AirPrint.
 
 [1.0.0]: https://github.com/scne59/brother-td-linux/releases/tag/v1.0.0

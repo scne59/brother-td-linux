@@ -108,7 +108,8 @@ Do not advertise or require IPPS/TLS. Use this if an Android, iOS, or other
 driverless client discovers the printer but cannot connect to the
 application's self-signed certificate. The application then advertises only
 unencrypted IPP.  The packaged service enables this option by default; remove
-it from the service command to enable IPPS.
+it from the service command to enable IPPS.  This option requires PAPPL 1.1 or
+newer; PAPPL 1.0.x ignores it.
 .SH EXAMPLES
 Run a printer application with a local USB printer:
 .PP

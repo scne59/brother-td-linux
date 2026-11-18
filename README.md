@@ -115,8 +115,8 @@ Build:
 - C11 compiler, `make`, `pkg-config`
 - `libcups2-dev` (or the equivalent development package)
 - Python 3 only if you want to regenerate PPDs from `models.json`
-- `libpappl-dev` only for the optional PAPPL printer application (1.3 or
-  newer; automatic first-run printer discovery requires PAPPL 1.4)
+- `libpappl-dev` only for the optional PAPPL printer application (1.0.3
+  or newer; automatic first-run printer discovery requires PAPPL 1.4)
 
 Tests additionally use:
 
@@ -125,8 +125,8 @@ Tests additionally use:
 - `libcups2-dev` for the synthetic raster generator
 
 The PAPPL application and test suite are also tested on Raspberry Pi 4
-(Raspbian 12, 32-bit `armhf`) with PAPPL 1.3.1, as well as on x86-64 with
-PAPPL 1.4.x.
+(Raspbian 12, 32-bit `armhf`, PAPPL 1.3.1) and Raspberry Pi 5
+(Ubuntu 22.04, arm64, PAPPL 1.0.3), as well as on x86-64 with PAPPL 1.4.x.
 
 ## Build and install
 
@@ -247,10 +247,11 @@ make pappl
 sudo make install-pappl PREFIX=/usr
 ```
 
-Ubuntu 24.04 ships PAPPL 1.3.1. The app builds and prints with `--device` on
-that version, but automatic first-run printer discovery requires PAPPL 1.4 or
-newer. On PAPPL 1.3, add a printer through the web interface (with
-`avahi-daemon` running) or pass `--device` and `--printer`.
+Ubuntu 24.04 ships PAPPL 1.3.1 and Ubuntu 22.04 ships PAPPL 1.0.3. The app
+builds and prints with `--device` on both, but automatic first-run printer
+discovery requires PAPPL 1.4 or newer. On older PAPPL versions, add a printer
+through the web interface (with `avahi-daemon` running) or pass `--device` and
+`--printer`. PAPPL 1.0.x also ignores `--no-tls` and always advertises IPPS.
 
 Run one printer connected to a device URI. As root the default spool is
 `/var/spool/brother-td-app`; as a normal user it defaults to

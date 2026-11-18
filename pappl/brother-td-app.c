@@ -61,6 +61,34 @@ typedef struct {
     td_options_t options;
 } td_raster_job_t;
 
+static void copy_string(char *dest, const char *src, size_t destsize)
+{
+    if (dest == NULL || destsize == 0)
+        return;
+    if (src == NULL)
+        src = "";
+    snprintf(dest, destsize, "%s", src);
+}
+
+static int system_port(pappl_system_t *system)
+{
+#if HAVE_PAPPL_MODERN_API
+    return papplSystemGetHostPort(system);
+#else
+    return papplSystemGetPort(system);
+#endif
+}
+
+static char *system_host_name(pappl_system_t *system, char *buffer,
+                              size_t bufsize)
+{
+#if HAVE_PAPPL_MODERN_API
+    return papplSystemGetHostName(system, buffer, bufsize);
+#else
+    return papplSystemGetHostname(system, buffer, bufsize);
+#endif
+}
+
 static const td_media_size_t media_sizes[] = {
     {102, 152}, {102, 127}, {102, 114}, {102, 102}, {102, 100},
     {102, 76},  {102, 50},  {102, 38},  {102, 25},
@@ -502,12 +530,12 @@ static void init_media_names(void)
         pwg_media_t *pwg = media_for_index(i);
 
         if (pwg != NULL)
-            papplCopyString(media_names[i], pwg->pwg, sizeof(media_names[i]));
+            copy_string(media_names[i], pwg->pwg, sizeof(media_names[i]));
         else
             media_names[i][0] = '\0';
 
         if (i == 0)
-            papplCopyString(source_names[i], "main-roll",
+            copy_string(source_names[i], "main-roll",
                             sizeof(source_names[i]));
         else
             snprintf(source_names[i], sizeof(source_names[i]),
@@ -522,9 +550,9 @@ static void fill_media(const td_model_t *model, pappl_media_col_t *media,
     int margin = media_margin_100mm(model, pwg->width / 100);
 
     memset(media, 0, sizeof(*media));
-    papplCopyString(media->size_name, pwg->pwg, sizeof(media->size_name));
-    papplCopyString(media->source, "main-roll", sizeof(media->source));
-    papplCopyString(media->type, "labels", sizeof(media->type));
+    copy_string(media->size_name, pwg->pwg, sizeof(media->size_name));
+    copy_string(media->source, "main-roll", sizeof(media->source));
+    copy_string(media->type, "labels", sizeof(media->type));
     media->size_width = pwg->width;
     media->size_length = pwg->length;
     media->left_margin = margin;
@@ -554,7 +582,7 @@ static bool avahi_available(void)
 
         memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;
-        papplCopyString(addr.sun_path, paths[i], sizeof(addr.sun_path));
+        copy_string(addr.sun_path, paths[i], sizeof(addr.sun_path));
 
         if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
             close(fd);
@@ -786,7 +814,7 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
 
         ready = &driver_data->media_ready[driver_data->num_source];
         fill_media(model, ready, pwg);
-        papplCopyString(ready->source, source_names[index],
+        copy_string(ready->source, source_names[index],
                         sizeof(ready->source));
         driver_data->source[driver_data->num_source] = source_names[index];
         driver_data->num_source++;
@@ -800,7 +828,7 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
             return false;
         }
         fill_media(model, &driver_data->media_ready[0], pwg);
-        papplCopyString(driver_data->media_ready[0].source, "main-roll",
+        copy_string(driver_data->media_ready[0].source, "main-roll",
                         sizeof(driver_data->media_ready[0].source));
         driver_data->source[0] = "main-roll";
         driver_data->num_source = 1;
@@ -837,12 +865,13 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
     {
         char host[256];
         char uri[512];
+        int host_port;
 
-        papplSystemGetHostName(system, host, sizeof(host));
+        system_host_name(system, host, sizeof(host));
+        host_port = system_port(system);
         if (host[0] == '\0')
-            papplCopyString(host, "localhost", sizeof(host));
-        snprintf(uri, sizeof(uri), "http://%s:%d/strings-en", host,
-                 papplSystemGetHostPort(system));
+            copy_string(host, "localhost", sizeof(host));
+        snprintf(uri, sizeof(uri), "http://%s:%d/strings-en", host, host_port);
         ippAddString(*driver_attrs, IPP_TAG_PRINTER, IPP_TAG_URI,
                      "printer-strings-uri", NULL, uri);
         ippAddString(*driver_attrs, IPP_TAG_PRINTER, IPP_TAG_LANGUAGE,
@@ -1489,8 +1518,13 @@ int main(int argc, char **argv)
                                           PAPPL_SOPTIONS_RAW_SOCKET |
                                           PAPPL_SOPTIONS_DNSSD_HOST;
 
+#if HAVE_PAPPL_MODERN_API
         if (no_tls)
             system_options |= PAPPL_SOPTIONS_NO_TLS;
+#else
+        if (no_tls)
+            fprintf(stderr, "brother-td-app: --no-tls requires PAPPL 1.1 or newer\n");
+#endif
 
         /* The "_universal" DNS-SD subtype is what AirPrint uses to find
            printers; PAPPL registers it under both _ipp._tcp and _ipps._tcp. */
@@ -1559,7 +1593,7 @@ int main(int argc, char **argv)
     if (port != 0)
         (void)papplSystemAddListeners(system, "[::]");
 
-    port = papplSystemGetHostPort(system);
+    port = system_port(system);
     if (port <= 0) {
         fprintf(stderr, "brother-td-app: cannot determine IPP port\n");
         papplSystemDelete(system);
