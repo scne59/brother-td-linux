@@ -143,9 +143,9 @@ check: tests $(BIN)
 	@echo "== PAPPL printer application"
 	@if [ -x $(APP) ]; then \
 		BROTHER_TD_APP=$(APP) BROTHER_TD_RASTER=$(BUILD_DIR)/make_raster \
-			python3 tests/pappl-integration.py; \
+			python3 tests/pappl-integration.py || exit 1; \
 		BROTHER_TD_APP=$(APP) \
-			python3 tests/pappl-port.py; \
+			python3 tests/pappl-port.py || exit 1; \
 	else \
 		echo "PAPPL app not built; run 'make pappl' to test it"; \
 	fi

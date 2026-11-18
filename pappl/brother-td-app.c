@@ -50,6 +50,11 @@ typedef struct {
 } td_media_size_t;
 
 typedef struct {
+    const char *type;
+    const char *text;
+} td_text_resource_t;
+
+typedef struct {
     td_job_t job;
     td_writer_t writer;
     td_gray_image image;
@@ -78,6 +83,28 @@ static const td_media_size_t media_sizes[] = {
 
 #define NUM_MEDIA_SIZES (int)(sizeof(media_sizes) / sizeof(media_sizes[0]))
 
+/* Pin standard entries to their official PWG names.  Older libcups versions
+ * have a smaller media table and otherwise report some of these as custom_…
+ * names, which Android's print service will not display. */
+static const char * const media_pwg_names[NUM_MEDIA_SIZES] = {
+    [0]  = "na_index-4x6_4x6in",
+    [3]  = "oe_square-photo_4x4in",
+    [13] = "na_index-3x5_3x5in",
+    [25] = "oe_photo-l_3.5x5in",
+    [26] = "oe_business-card_2x3.5in",
+    [27] = "om_card_54x86mm",
+    [28] = "om_dsc-photo_89x119mm",
+    [29] = "jpn_hagaki_100x148mm",
+    [30] = "iso_a8_52x74mm",
+    [31] = "iso_a7_74x105mm",
+    [32] = "iso_a6_105x148mm",
+    [33] = "om_square-photo_89x89mm",
+    [34] = "om_small-photo_100x150mm",
+    [35] = "om_business-card_55x85mm",
+    [36] = "iso_a9_37x52mm",
+    [37] = "iso_a10_26x37mm",
+};
+
 /* Mobile print dialogs, especially AirPrint, build the paper-size list from
  * media-col-ready and expect one size per media source.  A label printer has
  * one physical roll, so expose the common sizes as virtual rolls.  The list is
@@ -105,12 +132,27 @@ static const char *vendor_names[] = {
  * (for example "4 x 6″") but writes the PPD with *LanguageEncoding: ISOLatin1.
  * Clients that honor the PPD encoding then show mojibake.  Supply an ASCII
  * catalog so the generated PPD uses "4 x 6 in" instead. */
+static const char fallback_css[] =
+    "body{font-family:system-ui,sans-serif;margin:2rem;background:#fff;color:#111}"
+    "a{color:#0f6cbd}"
+    "table{border-collapse:collapse}"
+    "td,th{padding:.4rem .6rem;border-bottom:1px solid #ddd}";
+
 static const char media_strings[] =
     "\"media.na_index-4x6_4x6in\" = \"4 x 6 in\";\n"
     "\"media.na_index-3x5_3x5in\" = \"3 x 5 in\";\n"
     "\"media.oe_square-photo_4x4in\" = \"4 x 4 in\";\n"
     "\"media.oe_photo-l_3.5x5in\" = \"3.5 x 5 in\";\n"
     "\"media.oe_business-card_2x3.5in\" = \"2 x 3.5 in\";\n";
+
+/* Small ASCII SVG label icon used for the web UI favicon and navigation. */
+static const char icon_svg[] =
+    "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" "
+    "viewBox=\"0 0 32 32\">"
+    "<rect x=\"4\" y=\"6\" width=\"24\" height=\"20\" rx=\"2\" "
+    "fill=\"none\" stroke=\"#0f6cbd\" stroke-width=\"2\"/>"
+    "<path d=\"M8 12h16M8 16h12M8 20h16\" stroke=\"#0f6cbd\" "
+    "stroke-width=\"2\"/></svg>";
 
 static bool raster_start_job(pappl_job_t *job, pappl_pr_options_t *options,
                              pappl_device_t *device);
@@ -317,6 +359,45 @@ static const char *find_style_file(void)
     return NULL;
 }
 
+static char *load_style_file(const char *path, size_t *size)
+{
+    FILE *fp;
+    long length;
+    char *data;
+
+    if (path == NULL || size == NULL)
+        return NULL;
+
+    if ((fp = fopen(path, "rb")) == NULL)
+        return NULL;
+
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        fclose(fp);
+        return NULL;
+    }
+    length = ftell(fp);
+    if (length < 0) {
+        fclose(fp);
+        return NULL;
+    }
+    rewind(fp);
+
+    if ((data = malloc((size_t)length + 1)) == NULL) {
+        fclose(fp);
+        return NULL;
+    }
+    if (fread(data, 1, (size_t)length, fp) != (size_t)length) {
+        free(data);
+        fclose(fp);
+        return NULL;
+    }
+
+    data[length] = '\0';
+    *size = (size_t)length;
+    fclose(fp);
+    return data;
+}
+
 static void usage(FILE *stream)
 {
     fprintf(stream,
@@ -399,6 +480,14 @@ static pwg_media_t *media_for_size(int width_mm, int length_mm)
     return pwgMediaForSize(width_mm * 100, length_mm * 100);
 }
 
+static pwg_media_t *media_for_index(int index)
+{
+    if (media_pwg_names[index] != NULL)
+        return pwgMediaForPWG(media_pwg_names[index]);
+    return media_for_size(media_sizes[index].width_mm,
+                          media_sizes[index].length_mm);
+}
+
 /* pwgMediaForSize() returns a pointer to a single static buffer for custom
  * sizes. Copy each name into stable storage so the IPP media list does not
  * end up with every custom size pointing at the last one. */
@@ -410,8 +499,7 @@ static void init_media_names(void)
     int i;
 
     for (i = 0; i < NUM_MEDIA_SIZES; i++) {
-        pwg_media_t *pwg = media_for_size(media_sizes[i].width_mm,
-                                          media_sizes[i].length_mm);
+        pwg_media_t *pwg = media_for_index(i);
 
         if (pwg != NULL)
             papplCopyString(media_names[i], pwg->pwg, sizeof(media_names[i]));
@@ -496,6 +584,20 @@ static bool add_printer_fallback_cb(pappl_client_t *client, void *data)
         "<code>--device</code> and <code>--printer</code>.</p>\n"
         "</div>\n");
     papplClientHTMLFooter(client);
+    return true;
+}
+
+static bool text_resource_cb(pappl_client_t *client, void *data)
+{
+    const td_text_resource_t *resource = data;
+    http_t *http;
+
+    if (!papplClientRespond(client, HTTP_STATUS_OK, NULL, resource->type, 0, 0))
+        return false;
+
+    http = papplClientGetHTTP(client);
+    httpWrite2(http, resource->text, strlen(resource->text));
+    httpWrite2(http, "", 0);
     return true;
 }
 
@@ -656,7 +758,7 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
 
         if (media_sizes[i].width_mm > model->max_width_mm)
             continue;
-        pwg = media_for_size(media_sizes[i].width_mm, media_sizes[i].length_mm);
+        pwg = media_for_index(i);
         if (pwg == NULL || media_names[i][0] == '\0')
             continue;
         driver_data->media[driver_data->num_media++] = media_names[i];
@@ -678,8 +780,7 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
             continue;
         if (media_names[index][0] == '\0')
             continue;
-        pwg = media_for_size(media_sizes[index].width_mm,
-                             media_sizes[index].length_mm);
+        pwg = media_for_index(index);
         if (pwg == NULL)
             continue;
 
@@ -692,11 +793,7 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
     }
 
     if (driver_data->num_source == 0) {
-        pwg_media_t *pwg = media_for_size(102, 152);
-
-        if (pwg == NULL)
-            pwg = media_for_size(media_sizes[0].width_mm,
-                                 media_sizes[0].length_mm);
+        pwg_media_t *pwg = media_for_index(0);
         if (pwg == NULL) {
             papplLog(system, PAPPL_LOGLEVEL_ERROR,
                      "No ready media for %s", model->id);
@@ -1270,6 +1367,11 @@ int main(int argc, char **argv)
     pappl_loglevel_t loglevel = PAPPL_LOGLEVEL_INFO;
     int port = 0;
     bool auto_port = true;
+    char *style_data = NULL;
+    size_t style_len = 0;
+    td_text_resource_t style_resource;
+    td_text_resource_t strings_resource;
+    td_text_resource_t icon_resource;
     int i;
 
     for (i = 1; i < argc; i++) {
@@ -1407,14 +1509,29 @@ int main(int argc, char **argv)
         const char *style = find_style_file();
 
         if (style != NULL)
-            papplSystemAddResourceFile(system, "/style.css", "text/css", style);
-        else
+            style_data = load_style_file(style, &style_len);
+        if (style_data == NULL)
             papplLog(system, PAPPL_LOGLEVEL_WARN,
-                     "Cannot find brother-td.css; using the PAPPL default stylesheet");
+                     "Cannot read brother-td.css; using built-in fallback stylesheet");
+
+        style_resource.type = "text/css";
+        style_resource.text = style_data != NULL ? style_data : fallback_css;
+        papplSystemAddResourceCallback(system, "/style.css", "text/css",
+                                       text_resource_cb, &style_resource);
     }
 
-    papplSystemAddResourceString(system, "/strings-en", "text/plain",
-                                 media_strings);
+    strings_resource.type = "text/plain";
+    strings_resource.text = media_strings;
+    papplSystemAddResourceCallback(system, "/strings-en", "text/plain",
+                                   text_resource_cb, &strings_resource);
+    icon_resource.type = "image/svg+xml";
+    icon_resource.text = icon_svg;
+    papplSystemRemoveResource(system, "/favicon.png");
+    papplSystemRemoveResource(system, "/navicon.png");
+    papplSystemAddResourceCallback(system, "/favicon.png", "image/svg+xml",
+                                   text_resource_cb, &icon_resource);
+    papplSystemAddResourceCallback(system, "/navicon.png", "image/svg+xml",
+                                   text_resource_cb, &icon_resource);
 
     papplSystemAddLink(system, "Settings", "/config", PAPPL_LOPTIONS_NAVIGATION);
     papplSystemAddLink(system, "Add Printer", "/addprinter", PAPPL_LOPTIONS_NAVIGATION);
@@ -1556,6 +1673,7 @@ int main(int argc, char **argv)
 
     papplSystemRun(system);
     papplSystemDelete(system);
+    free(style_data);
 
     for (i = 0; i < (int)td_num_models; i++)
         free((char *)drivers[i].name);

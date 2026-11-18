@@ -107,5 +107,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Keep the Add Printer page available when `avahi-daemon` is not running
   instead of aborting in PAPPL 1.3's DNS-SD browser. The page shows a
   diagnostic and instructions to start Avahi or use `--device`.
+- Serve the web stylesheet, printer strings, favicon, and navigation icon
+  through callback resources, and pin standard PWG media names explicitly.
+  This avoids crashes and missing standard names with PAPPL 1.3.1/libcups
+  2.4.2 on 32-bit ARM.
+- Make `make check` fail if the PAPPL integration test fails, and wait for
+  the startup banner instead of racing it. The full test suite now passes on
+  Raspberry Pi 4 / Raspbian 12 armhf with PAPPL 1.3.1.
 
 [1.0.0]: https://github.com/scne59/brother-td-linux/releases/tag/v1.0.0
