@@ -1,0 +1,123 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: ${{ matrix.arch }} packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+          - arch: arm64
+            platform: linux/arm64
+          - arch: armhf
+            platform: linux/arm/v7
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU for ARM builds
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build Debian packages
+        env:
+          ARCH: ${{ matrix.arch }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+
+          rm -rf "$RUNNER_TEMP/build" dist
+          mkdir -p "$RUNNER_TEMP/build/brother-td-linux" dist
+
+          tar -C "$GITHUB_WORKSPACE" \
+              --exclude=.git --exclude=build --exclude=dist \
+              -cf - . | tar -C "$RUNNER_TEMP/build/brother-td-linux" -xf -
+
+          docker pull --platform "$PLATFORM" ubuntu:22.04
+          docker run --rm \
+            --platform "$PLATFORM" \
+            -e ARCH="$ARCH" \
+            -v "$RUNNER_TEMP/build:/work" \
+            ubuntu:22.04 bash -lc '
+              set -euo pipefail
+              export DEBIAN_FRONTEND=noninteractive
+              test "$(dpkg --print-architecture)" = "$ARCH"
+              apt-get update -qq
+              apt-get install -y -qq \
+                build-essential debhelper libcups2-dev libpappl-dev \
+                cups-ppdc cups-ipp-utils cups-filters ghostscript pkg-config python3
+              cd /work/brother-td-linux
+              dpkg-buildpackage -b -us -uc -d
+              chmod 644 /work/*.deb
+            '
+
+          cp "$RUNNER_TEMP"/build/*.deb dist/
+
+          for deb in dist/*.deb; do
+            actual="$(dpkg-deb -f "$deb" Architecture)"
+            if [ "$actual" != "$ARCH" ]; then
+              echo "$deb has architecture $actual, expected $ARCH" >&2
+              exit 1
+            fi
+            echo "$deb: $actual"
+          done
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate tag version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          grep -Eq "^VERSION[[:space:]]*:=[[:space:]]*${tag}$" Makefile
+          grep -q "^brother-td-cups (${tag}-" debian/changelog
+
+      - name: Build source tarball
+        run: make dist
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Collect assets and checksums
+        run: |
+          set -euo pipefail
+          cp brother-td-linux-*.tar.gz dist/
+          cd dist
+          sha256sum *.deb *.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.deb
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          generate_release_notes: true
+          fail_on_unmatched_files: true

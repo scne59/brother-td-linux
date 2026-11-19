@@ -178,6 +178,29 @@ dpkg-buildpackage -b -us -uc -d
 sudo dpkg -i ../printer-driver-brother-td_*.deb ../brother-td-printer-app_*.deb
 ```
 
+### Prebuilt release packages
+
+Every tagged GitHub release includes:
+
+- `printer-driver-brother-td_<version>_<arch>.deb`
+- `brother-td-printer-app_<version>_<arch>.deb`
+- `brother-td-linux-<version>.tar.gz`
+- `SHA256SUMS`
+
+Packages are built for `amd64`, `arm64`, and `armhf` on Ubuntu 22.04 to
+keep them usable on older Raspberry Pi OS and Ubuntu systems. Download the
+matching `.deb` files from the release page and install them with `apt` so
+dependencies are resolved:
+
+```sh
+sudo apt install ./printer-driver-brother-td_*_arm64.deb \
+                 ./brother-td-printer-app_*_arm64.deb
+```
+
+Replace `arm64` with `amd64` or `armhf` as needed. The PAPPL application
+packages declare `libpappl1 (>= 1.0.3)`; installing a newer PAPPL enables
+automatic printer discovery on first start.
+
 ## Add a printer
 
 1. Find the device URI:

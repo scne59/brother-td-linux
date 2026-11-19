@@ -117,5 +117,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Build against PAPPL 1.0.3 as shipped on Ubuntu 22.04 by using compatibility
   wrappers for the older API names. PAPPL 1.0.x ignores `--no-tls` and still
   advertises IPPS, so newer PAPPL is recommended for iOS/AirPrint.
+- Add a tagged-release workflow that builds `printer-driver-brother-td` and
+  `brother-td-printer-app` `.deb` packages for amd64, arm64, and armhf on
+  Ubuntu 22.04, plus a source tarball and `SHA256SUMS`, and uploads them to
+  the GitHub release.
 
 [1.0.0]: https://github.com/scne59/brother-td-linux/releases/tag/v1.0.0

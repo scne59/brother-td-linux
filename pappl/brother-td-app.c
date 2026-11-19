@@ -44,6 +44,20 @@
 #include "td_version.h"
 #include "td_writer.h"
 
+/* PAPPL 1.0.x predates these two features.  Keep the numeric option bit so a
+ * binary built against 1.0.x still enables no-TLS when it runs with a newer
+ * libpappl, and resolve first-run discovery at runtime through a weak symbol. */
+#ifndef PAPPL_SOPTIONS_NO_TLS
+#  define PAPPL_SOPTIONS_NO_TLS 0x0400
+#endif
+
+#if !HAVE_PAPPL_CREATE_PRINTERS
+extern bool papplSystemCreatePrinters(pappl_system_t *system,
+                                      pappl_devtype_t types,
+                                      pappl_pr_create_cb_t cb,
+                                      void *cb_data) __attribute__((weak));
+#endif
+
 typedef struct {
     int width_mm;
     int length_mm;
@@ -1518,13 +1532,8 @@ int main(int argc, char **argv)
                                           PAPPL_SOPTIONS_RAW_SOCKET |
                                           PAPPL_SOPTIONS_DNSSD_HOST;
 
-#if HAVE_PAPPL_MODERN_API
         if (no_tls)
             system_options |= PAPPL_SOPTIONS_NO_TLS;
-#else
-        if (no_tls)
-            fprintf(stderr, "brother-td-app: --no-tls requires PAPPL 1.1 or newer\n");
-#endif
 
         /* The "_universal" DNS-SD subtype is what AirPrint uses to find
            printers; PAPPL registers it under both _ipp._tcp and _ipps._tcp. */
@@ -1686,8 +1695,14 @@ int main(int argc, char **argv)
                                   PAPPL_DEVTYPE_DNS_SD,
                                   NULL, NULL);
 #else
-        papplLog(system, PAPPL_LOGLEVEL_WARN,
-                 "This PAPPL version cannot auto-discover printers; use --device or add one through the web interface.");
+        if (papplSystemCreatePrinters != NULL)
+            papplSystemCreatePrinters(system,
+                                      PAPPL_DEVTYPE_USB | PAPPL_DEVTYPE_SOCKET |
+                                      PAPPL_DEVTYPE_DNS_SD,
+                                      NULL, NULL);
+        else
+            papplLog(system, PAPPL_LOGLEVEL_WARN,
+                     "This PAPPL version cannot auto-discover printers; use --device or add one through the web interface.");
 #endif
     }
 
