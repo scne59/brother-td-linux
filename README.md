@@ -182,24 +182,44 @@ sudo dpkg -i ../printer-driver-brother-td_*.deb ../brother-td-printer-app_*.deb
 
 Every tagged GitHub release includes:
 
-- `printer-driver-brother-td_<version>_<arch>.deb`
-- `brother-td-printer-app_<version>_<arch>.deb`
-- `brother-td-linux-<version>.tar.gz`
-- `SHA256SUMS`
+- Debian/Ubuntu: `printer-driver-brother-td_<version>_<arch>.deb` and
+  `brother-td-printer-app_<version>_<arch>.deb` for `amd64`, `arm64`, `armhf`
+- Fedora/RHEL/openSUSE: `printer-driver-brother-td-<version>.<dist>.<arch>.rpm`
+  and `brother-td-printer-app-<version>.<dist>.<arch>.rpm` for `x86_64` and
+  `aarch64`
+- Arch Linux: `printer-driver-brother-td-<version>-<rel>-x86_64.pkg.tar.zst`
+  and `brother-td-printer-app-<version>-<rel>-x86_64.pkg.tar.zst`
+- `brother-td-linux-<version>.tar.gz` and `SHA256SUMS`
 
-Packages are built for `amd64`, `arm64`, and `armhf` on Ubuntu 22.04 to
-keep them usable on older Raspberry Pi OS and Ubuntu systems. Download the
-matching `.deb` files from the release page and install them with `apt` so
-dependencies are resolved:
+The `.deb` packages are built on Ubuntu 22.04 to keep them usable on older
+Raspberry Pi OS and Ubuntu systems.
+
+Debian/Ubuntu:
 
 ```sh
 sudo apt install ./printer-driver-brother-td_*_arm64.deb \
                  ./brother-td-printer-app_*_arm64.deb
 ```
 
-Replace `arm64` with `amd64` or `armhf` as needed. The PAPPL application
-packages declare `libpappl1 (>= 1.0.3)`; installing a newer PAPPL enables
-automatic printer discovery on first start.
+Fedora/RHEL:
+
+```sh
+sudo dnf install ./printer-driver-brother-td-*.x86_64.rpm \
+                 ./brother-td-printer-app-*.x86_64.rpm
+```
+
+Arch Linux:
+
+```sh
+sudo pacman -U ./printer-driver-brother-td-*.pkg.tar.zst \
+               ./brother-td-printer-app-*.pkg.tar.zst
+```
+
+Replace `arm64`/`x86_64` with the architecture matching the machine. The
+PAPPL application packages depend on PAPPL at runtime; installing PAPPL 1.4
+or newer enables automatic printer discovery on first start. Arch Linux ARM
+users can rebuild the included `packaging/arch/PKGBUILD` for `aarch64` or
+`armv7h`.
 
 ## Add a printer
 

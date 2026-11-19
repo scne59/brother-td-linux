@@ -1,0 +1,45 @@
+# Maintainer: brother-td-linux contributors <brother-td-linux@users.noreply.github.com>
+pkgbase=brother-td-linux
+pkgname=(printer-driver-brother-td brother-td-printer-app)
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="CUPS driver and PAPPL printer application for Brother TD-4D label printers"
+arch=('x86_64' 'aarch64' 'armv7h')
+url="https://github.com/scne59/brother-td-linux"
+license=('MIT')
+makedepends=('cups' 'pappl' 'pkgconf')
+source=("brother-td-linux-$pkgver.tar.gz")
+sha256sums=('SKIP')
+options=('!debug')
+
+build() {
+  cd "$srcdir/$pkgbase-$pkgver"
+  make all-pappl PREFIX=/usr
+}
+
+package_printer-driver-brother-td() {
+  pkgdesc="CUPS driver for Brother TD-4D label printers"
+  depends=('cups' 'cups-filters' 'ghostscript')
+
+  cd "$srcdir/$pkgbase-$pkgver"
+  make install DESTDIR="$pkgdir" PREFIX=/usr \
+       DOCDIR="/usr/share/doc/$pkgname"
+
+  rm -f "$pkgdir/usr/bin/brother-td-app"
+  rm -f "$pkgdir/usr/share/man/man1/brother-td-app.1"
+  rm -f "$pkgdir/usr/lib/systemd/system/brother-td-app.service"
+  rm -f "$pkgdir/usr/share/brother-td-app/style.css"
+  rmdir "$pkgdir/usr/bin" 2>/dev/null || true
+  rmdir "$pkgdir/usr/share/man/man1" 2>/dev/null || true
+  rmdir "$pkgdir/usr/lib/systemd/system" 2>/dev/null || true
+  rmdir "$pkgdir/usr/lib/systemd" 2>/dev/null || true
+  rmdir "$pkgdir/usr/share/brother-td-app" 2>/dev/null || true
+}
+
+package_brother-td-printer-app() {
+  pkgdesc="PAPPL/IPP Everywhere printer application for Brother TD-4D"
+  depends=('cups' 'cups-filters' 'ghostscript' 'pappl')
+
+  cd "$srcdir/$pkgbase-$pkgver"
+  make install-pappl DESTDIR="$pkgdir" PREFIX=/usr
+}

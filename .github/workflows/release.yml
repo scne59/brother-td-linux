@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   package:
-    name: ${{ matrix.arch }} packages
+    name: ${{ matrix.arch }} Debian/Ubuntu packages
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -81,9 +81,127 @@ jobs:
           path: dist/*.deb
           if-no-files-found: error
 
+  rpm:
+    name: ${{ matrix.arch }} RPM packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            platform: linux/amd64
+          - arch: aarch64
+            platform: linux/arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU for aarch64
+        if: matrix.arch != 'x86_64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build RPM packages
+        env:
+          ARCH: ${{ matrix.arch }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+
+          rm -rf "$RUNNER_TEMP/build" dist
+          mkdir -p "$RUNNER_TEMP/build/brother-td-linux" dist
+
+          tar -C "$GITHUB_WORKSPACE" \
+              --exclude=.git --exclude=build --exclude=dist \
+              -cf - . | tar -C "$RUNNER_TEMP/build/brother-td-linux" -xf -
+
+          docker pull --platform "$PLATFORM" fedora:latest
+          docker run --rm \
+            --platform "$PLATFORM" \
+            -e ARCH="$ARCH" \
+            -v "$RUNNER_TEMP/build:/work" \
+            fedora:latest bash -lc '
+              set -euo pipefail
+              test "$(rpm --eval "%{_arch}")" = "$ARCH"
+              dnf -y -q install rpm-build redhat-rpm-config gcc make \
+                cups-devel pappl-devel
+              cd /work/brother-td-linux
+              make dist >/dev/null
+              cp brother-td-linux-*.tar.gz /work/
+              rpmbuild -bb \
+                --define "_sourcedir /work" \
+                --define "_rpmdir /work/rpms" \
+                packaging/rpm/brother-td-linux.spec
+              for rpmfile in /work/rpms/*/*.rpm; do
+                test "$(rpm -qp --qf "%{ARCH}" "$rpmfile")" = "$ARCH"
+              done
+              cp /work/rpms/*/*.rpm /work/
+              chmod 644 /work/*.rpm
+            '
+
+          cp "$RUNNER_TEMP"/build/*.rpm dist/
+          ls -l dist/
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpms-${{ matrix.arch }}
+          path: dist/*.rpm
+          if-no-files-found: error
+
+  arch:
+    name: Arch Linux packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Arch packages
+        run: |
+          set -euo pipefail
+
+          rm -rf "$RUNNER_TEMP/build" dist
+          mkdir -p "$RUNNER_TEMP/build/brother-td-linux" dist
+
+          tar -C "$GITHUB_WORKSPACE" \
+              --exclude=.git --exclude=build --exclude=dist \
+              -cf - . | tar -C "$RUNNER_TEMP/build/brother-td-linux" -xf -
+
+          docker pull archlinux:base-devel
+          docker run --rm \
+            -v "$RUNNER_TEMP/build:/work" \
+            archlinux:base-devel bash -lc '
+              set -euo pipefail
+              pacman -Syu --noconfirm
+              pacman -S --noconfirm --needed \
+                cups cups-filters ghostscript pappl pkgconf
+              useradd -m builder
+              chown -R builder:builder /work
+              su builder -c "cd /work/brother-td-linux && \
+                make dist >/dev/null && \
+                cp brother-td-linux-*.tar.gz packaging/arch/ && \
+                cd packaging/arch && makepkg -f --nocheck"
+              cp /work/brother-td-linux/packaging/arch/*.pkg.tar.zst /work/
+              chmod 644 /work/*.pkg.tar.zst
+            '
+
+          cp "$RUNNER_TEMP"/build/*.pkg.tar.zst dist/
+          rm -f dist/*-debug-*.pkg.tar.zst
+          ls -l dist/
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-packages
+          path: dist/*.pkg.tar.zst
+          if-no-files-found: error
+
   release:
     name: Publish GitHub release
-    needs: package
+    needs:
+      - package
+      - rpm
+      - arch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -94,6 +212,9 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
           grep -Eq "^VERSION[[:space:]]*:=[[:space:]]*${tag}$" Makefile
           grep -q "^brother-td-cups (${tag}-" debian/changelog
+          grep -Eq "^Version:[[:space:]]*${tag}$" \
+            packaging/rpm/brother-td-linux.spec
+          grep -Eq "^pkgver=${tag}$" packaging/arch/PKGBUILD
 
       - name: Build source tarball
         run: make dist
@@ -109,7 +230,7 @@ jobs:
           set -euo pipefail
           cp brother-td-linux-*.tar.gz dist/
           cd dist
-          sha256sum *.deb *.tar.gz > SHA256SUMS
+          sha256sum *.deb *.rpm *.pkg.tar.zst *.tar.gz > SHA256SUMS
           cat SHA256SUMS
 
       - name: Create release
@@ -117,7 +238,10 @@ jobs:
         with:
           files: |
             dist/*.deb
+            dist/*.rpm
+            dist/*.pkg.tar.zst
             dist/*.tar.gz
             dist/SHA256SUMS
           generate_release_notes: true
           fail_on_unmatched_files: true
+          overwrite_files: true
