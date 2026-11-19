@@ -192,7 +192,8 @@ Every tagged GitHub release includes:
 - `brother-td-linux-<version>.tar.gz` and `SHA256SUMS`
 
 The `.deb` packages are built on Ubuntu 22.04 to keep them usable on older
-Raspberry Pi OS and Ubuntu systems.
+Raspberry Pi OS and Ubuntu systems. RPMs are built in Fedora and Arch
+packages in Arch Linux from the same tagged source.
 
 Debian/Ubuntu:
 
