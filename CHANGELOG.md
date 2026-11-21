@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- The PAPPL application advertises a custom media-size range, so clients that
+  send the document page size instead of a loaded roll (notably Inkscape)
+  pass `Validate-Job` instead of being rejected with "Unsupported media-col
+  collection value".
+
+### Fixed
+
+- Landscape documents are transposed to the printer's portrait media instead
+  of being rejected or squashed.  The PDF pipeline renders the rotated page
+  through Ghostscript, and the raster pipeline rotates the incoming image by
+  90 degrees.
+
 ## [1.0.0] - 2026-11-17
 
 ### Added

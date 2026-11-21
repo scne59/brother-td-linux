@@ -38,6 +38,9 @@ backend can transport the data.
   threshold.
 - **Correct geometry** — uses Brother's documented print-area pin counts and
   the 203/300 dpi head widths instead of stretching to the full label width.
+- **Landscape and custom page sizes** — print dialogs that describe the
+  document page (Inkscape, for example) are accepted; landscape pages are
+  transposed to the printer's physical media orientation.
 - **TIFF/PackBits raster compression** — with the documented fallback for
   incompressible lines. Can be disabled for troubleshooting.
 - **Scaling, rotation, alignment, mirroring, inversion, and black side

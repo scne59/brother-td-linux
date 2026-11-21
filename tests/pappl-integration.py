@@ -109,8 +109,10 @@ def stop_app() -> None:
 
 def ipptool_job(tmp: pathlib.Path, name: str, filename: pathlib.Path,
                 document_format: str, extra: str = "",
-                media: str = "na_index-3x5_3x5in") -> None:
+                media: str = "na_index-3x5_3x5in",
+                media_col: str = "") -> None:
     test = tmp / "test.ipp"
+    media_attributes = media_col or f"  ATTR keyword media {media}\n"
     test.write_text(
         "{\n"
         f'  NAME "{name}"\n'
@@ -123,7 +125,7 @@ def ipptool_job(tmp: pathlib.Path, name: str, filename: pathlib.Path,
         f"  ATTR mimeMediaType document-format {document_format}\n"
         f"  FILE {filename}\n"
         "  GROUP job-attributes-tag\n"
-        f"  ATTR keyword media {media}\n"
+        f"{media_attributes}"
         "  ATTR keyword print-scaling fit\n"
         f"{extra}"
         "  STATUS successful-ok\n"
@@ -274,7 +276,8 @@ def capture_pages(head_bytes: int) -> list[dict]:
 
 
 def make_pwg(tmp: pathlib.Path, width: int = 608, height: int = 1016,
-             page_width_mm: int = 76, page_length_mm: int = 127) -> pathlib.Path:
+             page_width_mm: int = 76, page_length_mm: int = 127,
+             pattern: str = "square") -> pathlib.Path:
     output = tmp / "input.pwg"
     subprocess.run(
         [
@@ -282,7 +285,7 @@ def make_pwg(tmp: pathlib.Path, width: int = 608, height: int = 1016,
             "--width", str(width), "--height", str(height), "--dpi", "203",
             "--page-width-mm", str(page_width_mm),
             "--page-length-mm", str(page_length_mm),
-            "--pattern", "square", "--colorspace", "K",
+            "--pattern", pattern, "--colorspace", "K",
         ],
         check=True,
         stdout=subprocess.DEVNULL,
@@ -362,6 +365,93 @@ def check_pdf_media(tmp: pathlib.Path) -> None:
     assert any(any(line) for line in pages[0]["lines"])
 
 
+LANDSCAPE_MEDIA_COL = (
+    "  ATTR collection media-col {\n"
+    "    MEMBER collection media-size { MEMBER integer x-dimension 12700 "
+    "MEMBER integer y-dimension 10200 }\n"
+    "    MEMBER keyword media-source auto\n"
+    "    MEMBER keyword media-type labels\n"
+    "  }\n"
+)
+
+LANDSCAPE_PWG_MEDIA_COL = (
+    "  ATTR collection media-col {\n"
+    "    MEMBER collection media-size { MEMBER integer x-dimension 15200 "
+    "MEMBER integer y-dimension 10200 }\n"
+    "    MEMBER keyword media-source auto\n"
+    "    MEMBER keyword media-type labels\n"
+    "  }\n"
+)
+
+
+def check_landscape_validate(tmp: pathlib.Path) -> None:
+    # Inkscape sends the document page size as a media-col during
+    # Validate-Job, which PAPPL treats as strict.  A custom range must accept
+    # the landscape size instead of rejecting the whole job.
+    test = tmp / "validate.ipp"
+    test.write_text(
+        "{\n"
+        '  NAME "landscape media-col"\n'
+        "  OPERATION Validate-Job\n"
+        "  GROUP operation-attributes-tag\n"
+        "  ATTR charset attributes-charset utf-8\n"
+        "  ATTR language attributes-natural-language en\n"
+        "  ATTR uri printer-uri $uri\n"
+        "  ATTR name requesting-user-name test\n"
+        "  ATTR mimeMediaType document-format application/pdf\n"
+        "  GROUP job-attributes-tag\n"
+        f"{LANDSCAPE_MEDIA_COL}"
+        "  STATUS successful-ok\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        ["ipptool", "-tv", f"ipp://localhost:{PORT}/ipp/print/TD4410", str(test)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0 and "[PASS]" in result.stdout, result.stdout[-2000:]
+
+
+def check_landscape_pdf(tmp: pathlib.Path) -> None:
+    pdf = make_pdf(tmp)
+    if pdf is None:
+        return
+    ipptool_job(tmp, "PDF landscape media-col", pdf, "application/pdf",
+                media_col=LANDSCAPE_MEDIA_COL)
+    pages = capture_pages(104)
+    assert len(pages) == 1, len(pages)
+    assert pages[0]["info"][2] == 102, pages[0]["info"]
+    assert pages[0]["info"][3] == 127, pages[0]["info"]
+    assert 960 <= len(pages[0]["lines"]) <= 970, len(pages[0]["lines"])
+    assert any(any(line) for line in pages[0]["lines"])
+
+
+def check_landscape_pwg(tmp: pathlib.Path) -> None:
+    # A client that already rasterized a landscape page must be rotated to
+    # the printer's portrait media instead of being squashed.
+    ipptool_job(tmp, "PWG landscape media-col",
+                make_pwg(tmp, 1215, 815, 152, 102, pattern="gradient"),
+                "image/pwg-raster",
+                media_col=LANDSCAPE_PWG_MEDIA_COL)
+    pages = capture_pages(104)
+    assert len(pages) == 1, len(pages)
+    assert pages[0]["info"][2] == 102, pages[0]["info"]
+    assert pages[0]["info"][3] == 152, pages[0]["info"]
+    assert 1160 <= len(pages[0]["lines"]) <= 1170, len(pages[0]["lines"])
+
+    # The source is a horizontal ramp that is dark on the right.  A
+    # 90-degree clockwise rotation puts the dark end at the bottom of the
+    # printed page; without rotation the page would keep its left/right ramp.
+    lines = pages[0]["lines"]
+    third = len(lines) // 3
+    top = sum(bin(byte).count("1") for line in lines[:third] for byte in line)
+    bottom = sum(bin(byte).count("1") for line in lines[-third:] for byte in line)
+    assert bottom > top * 2, (top, bottom)
+
+
 def check_options(tmp: pathlib.Path) -> None:
     pdf = make_pdf(tmp)
     if pdf is None:
@@ -406,6 +496,12 @@ def main() -> int:
             print("pappl-integration PDF: OK")
             check_pdf_media(tmp)
             print("pappl-integration PDF virtual roll: OK")
+            check_landscape_validate(tmp)
+            print("pappl-integration landscape validation: OK")
+            check_landscape_pdf(tmp)
+            print("pappl-integration landscape PDF: OK")
+            check_landscape_pwg(tmp)
+            print("pappl-integration landscape raster: OK")
             check_options(tmp)
             print("pappl-integration options: OK")
         finally:

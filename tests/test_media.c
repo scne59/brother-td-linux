@@ -77,11 +77,42 @@ static void check_geometry(void)
     assert(geometry.right_offset_px == 58);
 }
 
+static void check_normalize(void)
+{
+    const td_model_t *model = td_model_find("TD-4410D");
+    double width;
+    double length;
+
+    assert(model != NULL);
+
+    width = 152.0;
+    length = 102.0;
+    assert(td_media_normalize_orientation(model, &width, &length));
+    assert(width == 102.0 && length == 152.0);
+
+    width = 102.0;
+    length = 152.0;
+    assert(!td_media_normalize_orientation(model, &width, &length));
+    assert(width == 102.0 && length == 152.0);
+
+    /* Too large in both directions: geometry clamping handles it. */
+    width = 152.0;
+    length = 152.0;
+    assert(!td_media_normalize_orientation(model, &width, &length));
+    assert(width == 152.0 && length == 152.0);
+
+    width = 100.0;
+    length = 150.0;
+    assert(!td_media_normalize_orientation(model, &width, &length));
+    assert(width == 100.0 && length == 150.0);
+}
+
 int main(void)
 {
     check_model_lookup();
     check_widths();
     check_geometry();
+    check_normalize();
     puts("test_media: OK");
     return 0;
 }

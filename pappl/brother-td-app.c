@@ -161,6 +161,13 @@ static const int ready_media_indices[] = {
 _Static_assert(sizeof(ready_media_indices) / sizeof(ready_media_indices[0]) <= PAPPL_MAX_SOURCE,
                "ready_media_indices has more entries than PAPPL_MAX_SOURCE");
 
+/* PAPPL recognizes these two pseudo-names and turns them into a supported
+ * media-size range.  The maximum matches the longest supported label in
+ * landscape orientation (6 inches); the minimum is the printer's smallest
+ * media size. */
+#define TD_CUSTOM_MIN_MEDIA "custom_min_19x12mm_19x12mm"
+#define TD_CUSTOM_MAX_MEDIA "custom_max_152x152mm_152x152mm"
+
 static const char *vendor_names[] = {
     "td-media-type", "td-dither", "td-compression", "td-scaling",
     "td-rotate", "td-margin", "td-threshold", "td-align-x", "td-align-y",
@@ -811,6 +818,16 @@ static bool driver_cb(pappl_system_t *system, const char *driver_name,
         return false;
     }
 
+    /* Advertise a custom media range as well.  Clients such as Inkscape send
+     * the document page size instead of the loaded roll; without a range
+     * PAPPL rejects those jobs during Validate-Job.  The range is deliberately
+     * wider than the physical roll because a landscape document page is
+     * transposed to the printer's orientation by the job pipeline. */
+    if (driver_data->num_media + 2 <= (int)PAPPL_MAX_MEDIA) {
+        driver_data->media[driver_data->num_media++] = TD_CUSTOM_MIN_MEDIA;
+        driver_data->media[driver_data->num_media++] = TD_CUSTOM_MAX_MEDIA;
+    }
+
     for (i = 0; i < NUM_READY_MEDIA; i++) {
         int index = ready_media_indices[i];
         pwg_media_t *pwg;
@@ -1078,16 +1095,29 @@ static int run_ghostscript(pappl_job_t *job, const td_model_t *model,
     int argc = 0;
     int dpi = options->printer_resolution[0] > 0 ?
               options->printer_resolution[0] : model->dpi;
-    double width_pt = options->media.size_width * 72.0 / 2540.0;
-    double height_pt = options->media.size_length * 72.0 / 2540.0;
+    double width_mm = options->media.size_width / 100.0;
+    double length_mm = options->media.size_length / 100.0;
+    double width_pt;
+    double height_pt;
     pid_t pid;
     int status;
     time_t deadline;
 
-    if (width_pt <= 0.0)
-        width_pt = 288.0;
-    if (height_pt <= 0.0)
-        height_pt = 432.0;
+    if (width_mm <= 0.0)
+        width_mm = 101.6;
+    if (length_mm <= 0.0)
+        length_mm = 152.4;
+
+    /* Clients such as Inkscape describe the document page, which may be
+     * landscape.  The printer only feeds portrait labels, so render the
+     * rotated page and let Ghostscript fit the document into it. */
+    if (td_media_normalize_orientation(model, &width_mm, &length_mm))
+        papplLogJob(job, PAPPL_LOGLEVEL_INFO,
+                    "landscape page %.1fx%.1f mm; rendering %.1fx%.1f mm",
+                    length_mm, width_mm, width_mm, length_mm);
+
+    width_pt = width_mm * 72.0 / 25.4;
+    height_pt = length_mm * 72.0 / 25.4;
 
     snprintf(resolution, sizeof(resolution), "-r%dx%d", dpi, dpi);
     snprintf(width, sizeof(width), "-dDEVICEWIDTHPOINTS=%d", (int)lround(width_pt));
@@ -1115,9 +1145,7 @@ static int run_ghostscript(pappl_job_t *job, const td_model_t *model,
 
     papplLogJob(job, PAPPL_LOGLEVEL_INFO,
                 "running Ghostscript: %dx%d dpi, %.1fx%.1f mm, output '%s'",
-                dpi, dpi,
-                (double)options->media.size_width / 100.0,
-                (double)options->media.size_length / 100.0, output);
+                dpi, dpi, width_mm, length_mm, output);
 
     pid = fork();
     if (pid < 0) {

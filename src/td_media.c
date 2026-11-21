@@ -106,6 +106,28 @@ int td_printable_width_px(int dpi, double media_width_mm)
     return fallback;
 }
 
+bool td_media_normalize_orientation(const td_model_t *model,
+                                    double *width_mm, double *length_mm)
+{
+    double temporary;
+
+    if (model == NULL || width_mm == NULL || length_mm == NULL)
+        return false;
+
+    /* A page that is too wide for the media, but whose length still fits,
+     * is a landscape description of a supported portrait label.  A page that
+     * is too wide in both directions is invalid and is left for the geometry
+     * code to clamp. */
+    if (*width_mm <= (double)model->max_width_mm ||
+        *length_mm > (double)model->max_width_mm)
+        return false;
+
+    temporary = *width_mm;
+    *width_mm = *length_mm;
+    *length_mm = temporary;
+    return true;
+}
+
 int td_geometry_init(td_geometry_t *geometry, const td_model_t *model,
                      td_media_type_t type, double media_width_mm,
                      double media_length_mm)

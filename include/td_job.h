@@ -25,6 +25,7 @@ typedef struct {
     bool geometry_ready;
     bool first_page;
     bool pending_page_end;
+    int page_rotation;          /* automatic rotation for landscape pages */
 } td_job_t;
 
 int td_job_init(td_job_t *job, const td_options_t *options,

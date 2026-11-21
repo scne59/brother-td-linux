@@ -42,6 +42,16 @@ td_media_type_t td_media_type_parse(const char *value, td_media_type_t fallback)
  * 3 mm total edge allowance otherwise. */
 int td_printable_width_px(int dpi, double media_width_mm);
 
+/* Normalize a requested page size to the printer's physical orientation.
+ *
+ * Label printers only feed media along one axis, but clients (for example
+ * Inkscape) describe the document page, which may be landscape.  When the
+ * requested width exceeds the model's maximum media width and the length
+ * still fits, the dimensions are swapped and true is returned.  Callers that
+ * already have a raster image must rotate it by 90 degrees. */
+bool td_media_normalize_orientation(const td_model_t *model,
+                                    double *width_mm, double *length_mm);
+
 int td_geometry_init(td_geometry_t *geometry, const td_model_t *model,
                      td_media_type_t type, double media_width_mm,
                      double media_length_mm);

@@ -43,7 +43,8 @@ static double page_length_mm(const cups_page_header2_t *header, int dpi)
 }
 
 static int prepare_page(const td_gray_image *source, const td_options_t *options,
-                        const td_geometry_t *geometry, td_bitmap *bitmap)
+                        const td_geometry_t *geometry, int rotation,
+                        td_bitmap *bitmap)
 {
     td_gray_image working;
     td_gray_image placed;
@@ -54,9 +55,9 @@ static int prepare_page(const td_gray_image *source, const td_options_t *options
     memset(&working, 0, sizeof(working));
     memset(&placed, 0, sizeof(placed));
 
-    if (options->rotate != 0) {
-        if (td_gray_rotate(source, options->rotate, &working) < 0) {
-            td_log(TD_LOG_ERROR, "cannot rotate image by %d degrees", options->rotate);
+    if (rotation != 0) {
+        if (td_gray_rotate(source, rotation, &working) < 0) {
+            td_log(TD_LOG_ERROR, "cannot rotate image by %d degrees", rotation);
             return -1;
         }
         working_allocated = true;
@@ -139,6 +140,7 @@ int td_job_set_page(td_job_t *job, const cups_page_header2_t *header)
     int dpi;
     double width_mm;
     double length_mm;
+    bool rotated = false;
 
     if (job == NULL || header == NULL)
         return -1;
@@ -151,6 +153,15 @@ int td_job_set_page(td_job_t *job, const cups_page_header2_t *header)
         td_log(TD_LOG_ERROR, "invalid page size (%.2f x %.2f mm)", width_mm, length_mm);
         return -1;
     }
+
+    /* Clients such as Inkscape send the document page, which may be
+     * landscape even though the printer only feeds portrait labels.  Rotate
+     * the raster so it still fills the physical media correctly. */
+    rotated = td_media_normalize_orientation(job->model, &width_mm, &length_mm);
+    job->page_rotation = rotated ? 90 : 0;
+    if (rotated)
+        td_log(TD_LOG_DEBUG, "page is landscape; using %.2fx%.2f mm and rotating 90 degrees",
+               width_mm, length_mm);
 
     if (td_geometry_init(&job->geometry, job->model, job->options.media_type,
                          width_mm, length_mm) < 0) {
@@ -184,7 +195,9 @@ int td_job_emit_gray(td_job_t *job, const td_gray_image *source, bool last_page)
         job->pending_page_end = false;
     }
 
-    if (prepare_page(source, &job->options, &job->geometry, &bitmap) < 0)
+    if (prepare_page(source, &job->options, &job->geometry,
+                     (job->options.rotate + job->page_rotation) % 360,
+                     &bitmap) < 0)
         return -1;
 
     copies = job->options.copies;
