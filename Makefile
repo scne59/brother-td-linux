@@ -24,6 +24,7 @@ MANDIR         ?= $(PREFIX)/share/man
 SYSTEMD_UNIT_DIR ?= $(PREFIX)/lib/systemd/system
 APPDATA_DIR    ?= $(PREFIX)/share/brother-td-app
 DOCDIR         ?= $(PREFIX)/share/doc/brother-td
+WEB_DIR        ?= $(PREFIX)/share/brother-td/web
 
 CPPFLAGS       += -Iinclude -D_GNU_SOURCE -DTD_VERSION=\"$(VERSION)\"
 CFLAGS         ?= -O2 -g
@@ -68,7 +69,7 @@ PPD_FILES      := $(wildcard ppd/*.ppd)
 MAN_FILES      := man/brother-td.7 man/brother-td-filter.7
 DOC_FILES      := README.md LICENSE NOTICE CHANGELOG.md AUTHORS docs/protocol.md
 
-.PHONY: all all-pappl filter ppd pappl tests check install install-pappl uninstall clean dist regen help FORCE
+.PHONY: all all-pappl filter ppd pappl tests check check-web install install-pappl uninstall clean dist regen help FORCE
 
 all: filter ppd
 
@@ -130,7 +131,15 @@ $(BUILD_DIR)/make_raster: tests/make_raster.c
 
 tests: $(TEST_BINS) $(BUILD_DIR)/make_raster
 
-check: tests $(BIN)
+check-web:
+	@if command -v node >/dev/null 2>&1; then \
+		echo "== browser driver"; \
+		node --test tests/web-driver.test.mjs || exit 1; \
+	else \
+		echo "== browser driver (skipped: node is not installed)"; \
+	fi
+
+check: tests $(BIN) check-web
 	@for test in $(TEST_BINS); do \
 		echo "== $$test"; \
 		$$test || exit 1; \
@@ -173,6 +182,8 @@ install: all $(SERVICE)
 		install -D -m 0644 pappl/brother-td.css \
 			$(DESTDIR)$(APPDATA_DIR)/style.css; \
 	fi
+	install -d $(DESTDIR)$(WEB_DIR)
+	cp -R web/. $(DESTDIR)$(WEB_DIR)/
 
 install-pappl: pappl
 	install -d $(DESTDIR)$(PREFIX)/bin
@@ -188,6 +199,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(MANDIR)/man1/brother-td-app.1
 	-rm -f $(DESTDIR)$(SYSTEMD_UNIT_DIR)/brother-td-app.service
 	-rm -f $(DESTDIR)$(APPDATA_DIR)/style.css
+	-rm -rf $(DESTDIR)$(WEB_DIR)
 	-rm -f $(DESTDIR)$(CUPS_SERVERBIN)/filter/brother-td-filter
 	-rm -f $(addprefix $(DESTDIR)$(CUPS_DATADIR)/model/,$(notdir $(PPD_FILES)))
 	-rm -f $(addprefix $(DESTDIR)$(MANDIR)/man7/,$(notdir $(MAN_FILES)))
@@ -218,6 +230,7 @@ help:
 	@echo "  all       build the filter and PPDs (default)"
 	@echo "  pappl     build the PAPPL/IPP Everywhere printer application"
 	@echo "  check     run unit, PPD, and end-to-end tests"
+	@echo "  check-web run the browser driver tests (requires Node.js)"
 	@echo "  install   install into CUPS (DESTDIR/PREFIX supported)"
 	@echo "  uninstall remove installed files"
 	@echo "  regen     regenerate PPDs and src/td_models.c from models.json"

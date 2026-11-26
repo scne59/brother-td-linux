@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Print PDF and image documents directly to Brother TD-4D label printers from the browser using WebUSB.">
+    <title>Brother TD-4D Web Print</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Brother TD-4D Web Print</h1>
+        <p>Upload a PDF or image and print it directly over USB — no CUPS, no printer app, no server.</p>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>1. Document</h2>
+            <div class="dropzone" id="dropzone">
+                <input id="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp">
+                <p><strong>Drop a document here</strong></p>
+                <p class="hint">or click to choose a PDF, PNG, JPEG or WebP file</p>
+            </div>
+            <p class="muted" id="file-info">No document selected.</p>
+        </section>
+
+        <section class="card">
+            <h2>2. Printer and media</h2>
+            <div class="grid">
+                <label>Model
+                    <select id="model"></select>
+                </label>
+                <label>Media size
+                    <select id="media"></select>
+                </label>
+                <label id="custom-width-row" hidden>Custom width (mm)
+                    <input id="custom-width" type="number" min="19" step="0.1" value="102">
+                </label>
+                <label id="custom-length-row" hidden>Custom length (mm)
+                    <input id="custom-length" type="number" min="12" step="0.1" value="152">
+                </label>
+                <label>Media type
+                    <select id="media-type">
+                        <option value="diecut">Die-cut labels</option>
+                        <option value="continuous">Continuous roll</option>
+                    </select>
+                </label>
+                <label>Copies
+                    <input id="copies" type="number" min="1" max="99" value="1">
+                </label>
+            </div>
+
+            <details>
+                <summary>Advanced</summary>
+                <div class="grid">
+                    <label>Scaling
+                        <select id="scaling">
+                            <option value="fit">Fit (keep aspect ratio)</option>
+                            <option value="fitenlarge">Fit and enlarge</option>
+                            <option value="crop">Fill (crop)</option>
+                            <option value="none">Actual size</option>
+                        </select>
+                    </label>
+                    <label>Rotation
+                        <select id="rotation">
+                            <option value="auto">Auto (landscape pages)</option>
+                            <option value="0">0°</option>
+                            <option value="90">90° clockwise</option>
+                            <option value="180">180°</option>
+                            <option value="270">270°</option>
+                        </select>
+                    </label>
+                    <label>Dithering
+                        <select id="dither">
+                            <option value="floyd">Floyd–Steinberg</option>
+                            <option value="jarvis">Jarvis</option>
+                            <option value="stucki">Stucki</option>
+                            <option value="atkinson">Atkinson</option>
+                            <option value="sierra">Sierra</option>
+                            <option value="sierralite">Sierra Lite</option>
+                            <option value="burkes">Burkes</option>
+                            <option value="bayer4">Ordered 4×4</option>
+                            <option value="bayer8">Ordered 8×8</option>
+                            <option value="threshold">Threshold</option>
+                        </select>
+                    </label>
+                    <label>Threshold
+                        <input id="threshold" type="number" min="0" max="255" value="128">
+                    </label>
+                    <label>Compression
+                        <select id="compression">
+                            <option value="tiff">TIFF / PackBits</option>
+                            <option value="none">None</option>
+                        </select>
+                    </label>
+                    <label class="check"><input id="border" type="checkbox"> Black side margins</label>
+                    <label class="check"><input id="invert" type="checkbox"> Invert</label>
+                    <label class="check"><input id="cut-at-end" type="checkbox" checked> Cut at end of job</label>
+                </div>
+            </details>
+        </section>
+
+        <section class="card">
+            <h2>3. USB printer</h2>
+            <div class="row">
+                <button id="connect" type="button">Connect USB printer</button>
+                <span class="muted" id="usb-status">Not connected.</span>
+            </div>
+            <p class="hint" id="usb-hint">Chrome or Edge only. Close the CUPS queue / printer app while using this page; the USB interface must be free.</p>
+        </section>
+
+        <section class="card">
+            <h2>4. Preview and print</h2>
+            <div class="preview-toolbar">
+                <button id="preview-button" type="button" disabled>Generate preview</button>
+                <button id="download-button" type="button" disabled>Download .prn</button>
+                <button id="print-button" type="button" class="primary" disabled>Print</button>
+                <span class="page-nav" id="page-nav" hidden>
+                    <button id="prev-page" type="button" aria-label="Previous page">‹</button>
+                    <span class="muted" id="page-label"></span>
+                    <button id="next-page" type="button" aria-label="Next page">›</button>
+                </span>
+            </div>
+
+            <div class="preview">
+                <canvas id="preview" width="600" height="800" hidden></canvas>
+            </div>
+
+            <p class="muted" id="job-info"></p>
+            <progress id="progress" max="100" value="0" hidden></progress>
+            <div class="log" id="log" role="status" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
