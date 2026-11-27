@@ -31,6 +31,40 @@ The server must send `.mjs` files as `text/javascript`; Python's
 `http.server` and common web servers do this.  If the page stays empty,
 check the browser console for a module MIME-type error.
 
+### nginx
+
+nginx often serves `.mjs` as `application/octet-stream`, which makes the
+browser block the module import and leaves the page inert.  Add `mjs` to the
+JavaScript MIME type in `/etc/nginx/mime.types`:
+
+```nginx
+text/javascript  js mjs;
+```
+
+Then reload nginx:
+
+```sh
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Alternatively, set a default type for the app location only:
+
+```nginx
+location /brother/ {
+    default_type text/javascript;
+}
+```
+
+Verify the result:
+
+```sh
+curl -sI https://example.com/brother/vendor/pdfjs/pdf.min.mjs | grep -i content-type
+# content-type: text/javascript
+```
+
+After changing the MIME type, hard-reload the page (`Ctrl+Shift+R`) or clear
+the site data; browsers cache module scripts.
+
 To use the page from another machine, serve it over HTTPS or put it behind a
 TLS reverse proxy.  A plain `http://` LAN address is not a secure context and
 WebUSB will be unavailable.
