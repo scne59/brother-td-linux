@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- A serverless browser app in `web/` that renders PDF and image files in the
+  browser and prints them over WebUSB.  The raster, dithering, PackBits and
+  command-stream code is a JavaScript port of the CUPS driver, and pdf.js is
+  bundled so the page works offline.  Node tests cover the port and are run
+  by `make check-web`.
 - The PAPPL application advertises a custom media-size range, so clients that
   send the document page size instead of a loaded roll (notably Inkscape)
   pass `Validate-Job` instead of being rejected with "Unsupported media-col

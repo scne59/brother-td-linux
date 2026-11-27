@@ -55,6 +55,8 @@ systemctl daemon-reload >/dev/null 2>&1 || :
 /usr/share/cups/model/brother-td-*.ppd
 /usr/share/man/man7/brother-td.7*
 /usr/share/man/man7/brother-td-filter.7*
+%dir /usr/share/brother-td
+/usr/share/brother-td/web
 %doc README.md CHANGELOG.md NOTICE AUTHORS docs/protocol.md
 %license LICENSE
 

@@ -49,6 +49,9 @@ backend can transport the data.
 - **Auto-cut, cut-at-end, and peeler control** for continuous media.
 - **Debug capture** — write the exact byte stream sent to the printer to a
   file for inspection.
+- **Browser-only WebUSB app** — a static page in `web/` renders PDF and image
+  files in the browser and sends the native command stream directly over USB,
+  with no CUPS queue, printer application or server.
 - **Tested** — unit tests, PPD validation, and an end-to-end synthetic CUPS
   raster test suite.
 
@@ -410,6 +413,27 @@ The application test is part of `make check` when the app has been built:
 ```sh
 make check
 ```
+
+## Browser app (WebUSB)
+
+`web/` contains a serverless web app that prints PDF and image files directly
+from the browser over USB. It does not need CUPS or the printer application:
+the raster pipeline is ported to JavaScript, PDFs are rendered with pdf.js,
+and the resulting Brother command stream is sent through WebUSB.
+
+```sh
+cd web
+python3 -m http.server 8080 --bind 127.0.0.1
+```
+
+Open <http://localhost:8080/> in Chrome or Edge (desktop, ChromeOS or
+Android), connect the printer, and print. WebUSB requires a secure context and
+the USB interface must not be claimed by CUPS or `brother-td-app`. See
+[`web/README.md`](web/README.md) for the browser requirements, udev rules,
+Android notes, the raw `.prn` fallback and the test instructions.
+
+`make check-web` runs the JavaScript driver tests; they are also part of
+`make check` when Node.js is available.
 
 ## Printing from Android
 

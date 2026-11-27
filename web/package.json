@@ -1,0 +1,7 @@
+{
+  "name": "brother-td-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-only WebUSB printing UI for Brother TD-4D label printers"
+}
