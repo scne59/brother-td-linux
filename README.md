@@ -426,11 +426,11 @@ cd web
 python3 -m http.server 8080 --bind 127.0.0.1
 ```
 
-Open <http://localhost:8080/> in Chrome or Edge, connect the printer, and
-print. WebUSB requires a secure context and the USB interface must not be
-claimed by CUPS or `brother-td-app`. See [`web/README.md`](web/README.md) for
-the browser requirements, udev rules, the raw `.prn` fallback and the test
-instructions.
+Open <http://localhost:8080/> in Chrome or Edge (desktop, ChromeOS or
+Android), connect the printer, and print. WebUSB requires a secure context and
+the USB interface must not be claimed by CUPS or `brother-td-app`. See
+[`web/README.md`](web/README.md) for the browser requirements, udev rules,
+Android notes, the raw `.prn` fallback and the test instructions.
 
 `make check-web` runs the JavaScript driver tests; they are also part of
 `make check` when Node.js is available.

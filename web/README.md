@@ -11,7 +11,8 @@ of `src/td_media.c`, `src/td_image.c`, `src/td_dither.c`,
 
 ## Requirements
 
-- **Chrome or Edge** (WebUSB is not available in Firefox or Safari).
+- **Chrome or Edge** (desktop, ChromeOS or Android; WebUSB is not available in
+  Firefox, Safari or Android WebView).
 - A **secure context**: `https://` or `http://localhost`.
 - The printer's USB interface must not be claimed by another process.
 - Permission to open the USB device (usually membership in the `lp` group).
@@ -69,6 +70,23 @@ sudo udevadm trigger
 ```
 
 Then unplug and replug the printer.
+
+## Android
+
+Chrome for Android (61+), Samsung Internet (8.2+) and Opera Mobile (80+)
+expose WebUSB.  To print from a phone or tablet:
+
+- Connect the printer with a USB OTG adapter.  The phone/tablet acts as the
+  USB host and must support USB host mode.
+- Serve the app over **HTTPS**.  `http://localhost` on the phone refers to the
+  phone itself, so use a static host (GitHub Pages, Netlify, …) or a TLS
+  tunnel to a local server.
+- Grant the Android USB permission prompt when Chrome asks.
+- After unplugging and replugging the printer, press **Connect USB printer**
+  again.  Chrome for Android does not reliably deliver `connect`/`disconnect`
+  events or list a reconnected device through `getDevices()`, but
+  `requestDevice()` works.
+- Android WebView (in-app browsers) and Firefox/Safari do not support WebUSB.
 
 ## Supported input
 
