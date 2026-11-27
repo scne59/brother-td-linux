@@ -24,8 +24,10 @@ cd web
 python3 -m http.server 8080 --bind 127.0.0.1
 ```
 
-Open <http://localhost:8080/>, connect the printer, choose a document, press
-**Generate preview** and then **Print**.
+Open <http://localhost:8080/>, connect the printer and choose a document.
+The preview is generated automatically and refreshed whenever media,
+scaling, rotation, dithering or any other option changes; press **Print**
+when it looks right.  **Refresh preview** forces a rebuild.
 
 The server must send `.mjs` files as `text/javascript`; Python's
 `http.server` and common web servers do this.  If the page stays empty,

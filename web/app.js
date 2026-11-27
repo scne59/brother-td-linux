@@ -50,13 +50,21 @@ const USB_CHUNK_SIZE = 16 * 1024;
 
 const state = {
     file: null,
+    pages: null,
+    pagesKey: '',
     bitmaps: [],
     geometry: null,
     stream: null,
     pageIndex: 0,
     busy: false,
     usb: null,
+    generating: false,
+    pending: false,
+    generation: 0,
+    regenTimer: null,
 };
+
+class StaleGeneration extends Error {}
 
 function log(message, kind = '') {
     const element = $('#log');
@@ -81,11 +89,12 @@ function setBusy(busy) {
 function updateButtons() {
     const hasDocument = state.file !== null;
     const hasOutput = state.stream !== null;
+    const busy = state.busy || state.generating;
 
-    $('#preview-button').disabled = !hasDocument || state.busy;
-    $('#download-button').disabled = !hasOutput || state.busy;
-    $('#print-button').disabled = !hasOutput || state.busy;
-    $('#connect').disabled = state.busy;
+    $('#preview-button').disabled = !hasDocument || busy;
+    $('#download-button').disabled = !hasOutput || busy;
+    $('#print-button').disabled = !hasOutput || busy;
+    $('#connect').disabled = busy;
 }
 
 function selectedMedia() {
@@ -149,7 +158,7 @@ function updateCustomMediaRows() {
     $('#custom-length-row').hidden = !custom;
 }
 
-function resetOutputs() {
+function clearOutput() {
     state.bitmaps = [];
     state.geometry = null;
     state.stream = null;
@@ -162,13 +171,36 @@ function resetOutputs() {
     updateButtons();
 }
 
+function scheduleGenerate(delay = 350) {
+    if (!state.file)
+        return;
+
+    clearTimeout(state.regenTimer);
+    state.regenTimer = setTimeout(() => {
+        state.regenTimer = null;
+
+        if (state.busy || state.generating) {
+            state.pending = true;
+            return;
+        }
+
+        generate();
+    }, delay);
+}
+
 function formatMm(value) {
     return `${value.toFixed(1)} mm`;
 }
 
 function setFile(file) {
     state.file = file;
-    resetOutputs();
+    state.pages = null;
+    state.pagesKey = '';
+    state.generation++;
+    state.pending = false;
+    clearTimeout(state.regenTimer);
+    state.regenTimer = null;
+    clearOutput();
     clearLog();
 
     if (!file) {
@@ -179,7 +211,8 @@ function setFile(file) {
 
     $('#file-info').textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KiB)`;
     updateButtons();
-    log(`Selected ${file.name}. Choose media and press "Generate preview".`);
+    log(`Selected ${file.name}; generating preview…`);
+    scheduleGenerate(0);
 }
 
 function renderScaleFor(page, model) {
@@ -194,46 +227,61 @@ function renderScaleFor(page, model) {
     return scale;
 }
 
-async function loadPdfPages(file, model, onProgress) {
+async function loadPdfPages(file, model, onProgress, isStale) {
     const data = new Uint8Array(await file.arrayBuffer());
     const pdf = await pdfjsLib.getDocument({ data }).promise;
     const pages = [];
 
-    if (pdf.numPages > 500) {
-        throw new Error(`Document has ${pdf.numPages} pages; the browser app is limited to 500 pages.`);
+    try {
+        if (pdf.numPages > 500) {
+            throw new Error(`Document has ${pdf.numPages} pages; the browser app is limited to 500 pages.`);
+        }
+
+        for (let number = 1; number <= pdf.numPages; number++) {
+            if (isStale?.())
+                throw new StaleGeneration();
+
+            const page = await pdf.getPage(number);
+            const scale = renderScaleFor(page, model);
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+
+            canvas.width = Math.max(1, Math.ceil(viewport.width));
+            canvas.height = Math.max(1, Math.ceil(viewport.height));
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            await page.render({
+                canvasContext: context,
+                viewport,
+                background: 'white',
+            }).promise;
+
+            const image = context.getImageData(0, 0, canvas.width, canvas.height);
+
+            page.cleanup();
+
+            if (isStale?.())
+                throw new StaleGeneration();
+
+            pages.push(grayFromRGBA(image.data, canvas.width, canvas.height));
+            onProgress?.(number, pdf.numPages);
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+    } finally {
+        await pdf.destroy();
     }
 
-    for (let number = 1; number <= pdf.numPages; number++) {
-        const page = await pdf.getPage(number);
-        const scale = renderScaleFor(page, model);
-        const viewport = page.getViewport({ scale });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-
-        canvas.width = Math.max(1, Math.ceil(viewport.width));
-        canvas.height = Math.max(1, Math.ceil(viewport.height));
-        context.fillStyle = '#ffffff';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        await page.render({
-            canvasContext: context,
-            viewport,
-            background: 'white',
-        }).promise;
-
-        const image = context.getImageData(0, 0, canvas.width, canvas.height);
-        pages.push(grayFromRGBA(image.data, canvas.width, canvas.height));
-        onProgress?.(number, pdf.numPages);
-        page.cleanup();
-        await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-
-    await pdf.destroy();
     return pages;
 }
 
-async function loadImagePage(file, onProgress) {
+async function loadImagePage(file, onProgress, isStale) {
     const bitmap = await createImageBitmap(file);
+
+    if (isStale?.())
+        throw new StaleGeneration();
+
     let scale = 1;
 
     if (Math.max(bitmap.width, bitmap.height) * scale > MAX_RENDER_DIMENSION)
@@ -254,16 +302,64 @@ async function loadImagePage(file, onProgress) {
 
     const image = context.getImageData(0, 0, canvas.width, canvas.height);
     onProgress?.(1, 1);
+
+    if (isStale?.())
+        throw new StaleGeneration();
+
     return [grayFromRGBA(image.data, canvas.width, canvas.height)];
 }
 
+async function ensurePages(model, token) {
+    const isPdf = state.file.type === 'application/pdf' ||
+                  /\.pdf$/i.test(state.file.name);
+    const key = `${isPdf ? 'pdf' : 'image'}|${state.file.name}|${state.file.size}|` +
+                `${state.file.lastModified}|${isPdf ? model.id : ''}`;
+    const isStale = () => token !== state.generation;
+
+    if (state.pages && state.pagesKey === key) {
+        log('Using cached document render.');
+        return state.pages;
+    }
+
+    log(isPdf ? `Rendering ${state.file.name} at ${model.dpi} dpi…`
+              : `Rendering ${state.file.name}…`);
+
+    const pages = isPdf
+        ? await loadPdfPages(state.file, model, (page, count) => {
+              log(`Rendered page ${page}/${count}.`);
+          }, isStale)
+        : await loadImagePage(state.file, (page, count) => {
+              log(`Rendered image ${page}/${count}.`);
+          }, isStale);
+
+    if (isStale())
+        throw new StaleGeneration();
+
+    state.pages = pages;
+    state.pagesKey = key;
+    return pages;
+}
+
 async function generate() {
-    if (!state.file || state.busy)
+    if (!state.file)
         return;
 
+    if (state.busy || state.generating) {
+        state.pending = true;
+        return;
+    }
+
+    const token = ++state.generation;
+    const isStale = () => token !== state.generation;
+
+    state.generating = true;
+    state.stream = null;
+    state.pending = false;
+    clearTimeout(state.regenTimer);
+    state.regenTimer = null;
+    updateButtons();
     clearLog();
-    resetOutputs();
-    setBusy(true);
+    $('#job-info').textContent = 'Updating preview…';
 
     try {
         const options = readOptions();
@@ -285,23 +381,19 @@ async function generate() {
         if (geometry.mediaWidthMm !== options.widthMm)
             log(`Media width clamped to the ${model.id} maximum of ${model.maxWidthMm} mm.`);
 
-        log(`Rendering ${state.file.name} at ${model.dpi} dpi…`);
+        const pages = await ensurePages(model, token);
 
-        const isPdf = state.file.type === 'application/pdf' ||
-                      /\.pdf$/i.test(state.file.name);
-        const pages = isPdf
-            ? await loadPdfPages(state.file, model, (page, count) => {
-                  log(`Rendered page ${page}/${count}.`);
-              })
-            : await loadImagePage(state.file, (page, count) => {
-                  log(`Rendered image ${page}/${count}.`);
-              });
+        if (isStale())
+            return;
 
         log(`Preparing ${pages.length} page(s) for ${formatMm(geometry.mediaWidthMm)} × ${formatMm(geometry.mediaLengthMm)} media…`);
 
         const bitmaps = [];
 
         for (let index = 0; index < pages.length; index++) {
+            if (isStale())
+                return;
+
             const page = pages[index];
             let rotation;
 
@@ -329,6 +421,9 @@ async function generate() {
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
 
+        if (isStale())
+            return;
+
         log('Building printer command stream…');
         const stream = buildJobStream({
             model,
@@ -343,10 +438,15 @@ async function generate() {
             },
         });
 
+        if (isStale())
+            return;
+
         state.bitmaps = bitmaps;
         state.geometry = geometry;
         state.stream = stream;
-        state.pageIndex = 0;
+        state.pageIndex = Math.min(state.pageIndex, bitmaps.length - 1);
+        if (state.pageIndex < 0)
+            state.pageIndex = 0;
 
         $('#job-info').textContent =
             `${pages.length} page(s) · ${geometry.printWidthPx} × ${geometry.printHeightPx} dots · ` +
@@ -357,9 +457,17 @@ async function generate() {
         drawPreview();
         log(`Ready to print: ${stream.length} bytes.`, 'ok');
     } catch (error) {
+        if (error instanceof StaleGeneration || isStale())
+            return;
         log(`Error: ${error.message || error}`, 'error');
+        $('#job-info').textContent = '';
     } finally {
-        setBusy(false);
+        state.generating = false;
+        updateButtons();
+        if (state.pending) {
+            state.pending = false;
+            scheduleGenerate(0);
+        }
     }
 }
 
@@ -558,13 +666,12 @@ async function writeUsb(bytes) {
 }
 
 async function print() {
-    if (state.busy)
+    if (state.busy || state.generating)
         return;
 
     if (!state.stream) {
-        await generate();
-        if (!state.stream)
-            return;
+        log('The preview is not ready yet.', 'error');
+        return;
     }
 
     if (!state.usb) {
@@ -582,6 +689,10 @@ async function print() {
         log(`Printing failed: ${error.message || error}`, 'error');
     } finally {
         setBusy(false);
+        if (state.pending) {
+            state.pending = false;
+            scheduleGenerate(0);
+        }
     }
 }
 
@@ -604,20 +715,25 @@ function wireEvents() {
     });
 
     $('#media').addEventListener('change', updateCustomMediaRows);
-    $('#preview-button').addEventListener('click', generate);
+    $('#preview-button').addEventListener('click', () => {
+        state.pending = false;
+        clearTimeout(state.regenTimer);
+        state.regenTimer = null;
+        generate();
+    });
     $('#print-button').addEventListener('click', print);
     $('#download-button').addEventListener('click', downloadStream);
     $('#connect').addEventListener('click', connectUsb);
 
-    for (const id of ['model', 'media', 'custom-width', 'custom-length', 'media-type',
-                      'copies', 'scaling', 'rotation', 'dither', 'threshold',
-                      'compression', 'border', 'invert', 'cut-at-end']) {
-        document.getElementById(id).addEventListener('change', () => {
-            if (state.stream) {
-                resetOutputs();
-                log('Options changed; generate a new preview.');
-            }
-        });
+    for (const id of ['model', 'media', 'media-type', 'copies', 'scaling',
+                      'rotation', 'dither', 'compression', 'border', 'invert',
+                      'cut-at-end']) {
+        document.getElementById(id).addEventListener('change', () => scheduleGenerate());
+    }
+
+    for (const id of ['custom-width', 'custom-length', 'threshold']) {
+        document.getElementById(id).addEventListener('input', () => scheduleGenerate(500));
+        document.getElementById(id).addEventListener('change', () => scheduleGenerate(0));
     }
 
     $('#prev-page').addEventListener('click', () => {
